@@ -5,6 +5,8 @@ import { runValidate } from '../src/commands/validate';
 const root = path.resolve(__dirname, '../../..');
 const validFile = path.join(root, 'fixtures/valid/example.json');
 const dupId = path.join(root, 'fixtures/invalid/duplicate_step_id.json');
+const exprParse = path.join(root, 'fixtures/invalid/expr_parse_error.json');
+const exprNs = path.join(root, 'fixtures/invalid/expr_namespace_error.json');
 const missingEntry = path.join(
 	root,
 	'fixtures/invalid/entrypoint_missing.json'
@@ -54,5 +56,18 @@ describe('agentkit validate (stage 1)', () => {
 		expect(res.exitCode).toBe(1);
 		const codes = JSON.parse(res.output).findings.map((f: any) => f.code);
 		expect(codes).toContain('E_CONNECTION_MISSING');
+	});
+	it('flags expression parse errors', () => {
+		const res = runValidate(exprParse, { format: 'json', strict: false });
+		expect(res.exitCode).toBe(1);
+		const codes = JSON.parse(res.output).findings.map((f: any) => f.code);
+		expect(codes).toContain('E_EXPR_PARSE');
+	});
+
+	it('flags illegal expression namespaces', () => {
+		const res = runValidate(exprNs, { format: 'json', strict: false });
+		expect(res.exitCode).toBe(1);
+		const codes = JSON.parse(res.output).findings.map((f: any) => f.code);
+		expect(codes).toContain('E_EXPR_NAMESPACE');
 	});
 });

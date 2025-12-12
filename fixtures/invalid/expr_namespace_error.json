@@ -1,0 +1,18 @@
+{
+    "schema_version": "1.0.0",
+    "kind": "agent_definition",
+    "id": "bad_expr_ns",
+    "name": "Bad Expr Namespace",
+    "template_version": "1.0.0",
+    "trigger": { "type": "manual", "config": {} },
+    "flow": { "entrypoint": "step1" },
+    "steps": [
+      {
+        "id": "step1",
+        "type": "llm.prompt",
+        "params": { "user_prompt": "Hello {{ secrets.api_key }}" },
+        "flow": { "end": true }
+      }
+    ]
+  }
+  

@@ -1,4 +1,5 @@
 import type { AgentDefinition } from '@agentkit/schema';
+import { extractExpressions, parseExpression, validateNamespace } from "@agentkit/expressions";
 import type { Finding } from './types';
 
 function isNonEmptyString(x: unknown): x is string {
@@ -101,6 +102,32 @@ export function validateSemantic(doc: AgentDefinition): Finding[] {
 			});
 		}
 	}
+
+      // E_EXPR_PARSE / E_EXPR_NAMESPACE
+    const occurrences = extractExpressions(doc, "$");
+    for (const occ of occurrences) {
+        const parsed = parseExpression(occ.expr);
+        if (!parsed.ok) {
+        findings.push({
+            code: "E_EXPR_PARSE",
+            severity: "error",
+            message: `Invalid expression: ${parsed.error}. Expression: "${occ.expr}"`,
+            jsonPath: occ.jsonPath
+        });
+        continue;
+        }
+
+        const ns = validateNamespace(occ.expr);
+        if (!ns.ok) {
+        findings.push({
+            code: "E_EXPR_NAMESPACE",
+            severity: "error",
+            message: `Illegal expression root namespace "${ns.root ?? "unknown"}". Allowed: input, steps, runtime, connections.`,
+            jsonPath: occ.jsonPath
+        });
+        }
+    }
+
 
 	return findings;
 }

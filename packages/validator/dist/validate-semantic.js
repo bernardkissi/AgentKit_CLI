@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.validateSemantic = validateSemantic;
+const expressions_1 = require("@agentkit/expressions");
 function isNonEmptyString(x) {
     return typeof x === 'string' && x.trim().length > 0;
 }
@@ -88,6 +89,29 @@ function validateSemantic(doc) {
                 severity: 'error',
                 message: `Step '${step.id}' references connection '${conn}', but runtime.connections does not define it.`,
                 jsonPath: `$.steps[?(@.id=="${step.id}")].params.connection`,
+            });
+        }
+    }
+    // E_EXPR_PARSE / E_EXPR_NAMESPACE
+    const occurrences = (0, expressions_1.extractExpressions)(doc, "$");
+    for (const occ of occurrences) {
+        const parsed = (0, expressions_1.parseExpression)(occ.expr);
+        if (!parsed.ok) {
+            findings.push({
+                code: "E_EXPR_PARSE",
+                severity: "error",
+                message: `Invalid expression: ${parsed.error}. Expression: "${occ.expr}"`,
+                jsonPath: occ.jsonPath
+            });
+            continue;
+        }
+        const ns = (0, expressions_1.validateNamespace)(occ.expr);
+        if (!ns.ok) {
+            findings.push({
+                code: "E_EXPR_NAMESPACE",
+                severity: "error",
+                message: `Illegal expression root namespace "${ns.root ?? "unknown"}". Allowed: input, steps, runtime, connections.`,
+                jsonPath: occ.jsonPath
             });
         }
     }
