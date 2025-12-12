@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "test": "vitest run",
-    "lint": "echo 'lint placeholder'"
+    "lint": "eslint --ext .ts,.tsx src"
   },
   "dependencies": {
     "zod": "^3.25.76"
