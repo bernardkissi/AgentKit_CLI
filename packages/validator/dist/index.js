@@ -17,4 +17,5 @@ Object.defineProperty(exports, "__esModule", { value: true });
 __exportStar(require("./types"), exports);
 __exportStar(require("./validate-structural"), exports);
 __exportStar(require("./validate-semantic"), exports);
+__exportStar(require("./analyze-static"), exports);
 //# sourceMappingURL=index.js.map

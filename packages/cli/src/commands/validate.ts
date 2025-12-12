@@ -1,5 +1,6 @@
 import type { Finding } from '@agentkit/validator';
 import { validateStructural, validateSemantic } from '@agentkit/validator';
+import { analyzeStatic } from "@agentkit/validator"
 
 import { loadDoc } from '../io/load';
 import { renderText } from '../reporting/text';
@@ -32,6 +33,9 @@ export function runValidate(
 			}));
 			findings = findings.concat(semantic);
 		}
+
+		const staticFindings = analyzeStatic(doc as any).map((f) => ({ ...f, file: filePath }));
+findings = findings.concat(staticFindings);
 
 		const hasErrors = findings.some((f) => f.severity === 'error');
 		const hasWarnings = findings.some((f) => f.severity === 'warning');

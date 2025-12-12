@@ -1,0 +1,24 @@
+{
+    "schema_version": "1.0.0",
+    "kind": "agent_definition",
+    "id": "bad_output_ref",
+    "name": "Bad Output Ref",
+    "template_version": "1.0.0",
+    "trigger": { "type": "manual", "config": {} },
+    "flow": { "entrypoint": "a" },
+    "steps": [
+      {
+        "id": "a",
+        "type": "llm.prompt",
+        "params": { "user_prompt": "Make text" },
+        "outputs": { "other": "string" },
+        "flow": { "next": "b" }
+      },
+      {
+        "id": "b",
+        "type": "llm.prompt",
+        "params": { "user_prompt": "Use {{ steps.a.outputs.text }}" },
+        "flow": { "end": true }
+      }
+    ]
+  }

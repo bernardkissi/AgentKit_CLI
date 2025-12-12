@@ -7,14 +7,14 @@ const validFile = path.join(root, 'fixtures/valid/example.json');
 const dupId = path.join(root, 'fixtures/invalid/duplicate_step_id.json');
 const exprParse = path.join(root, 'fixtures/invalid/expr_parse_error.json');
 const exprNs = path.join(root, 'fixtures/invalid/expr_namespace_error.json');
-const missingEntry = path.join(
-	root,
-	'fixtures/invalid/entrypoint_missing.json'
-);
-const missingTarget = path.join(
-	root,
-	'fixtures/invalid/flow_target_missing.json'
-);
+
+// reference fixtures
+const outRef = path.join(root, "fixtures/invalid/output_reference_invalid.json");
+const unreachable = path.join(root, "fixtures/warnings/unreachable_step.json");
+const cycle = path.join(root, "fixtures/invalid/cycle_detected.json");
+// invalid fixtures
+const missingEntry = path.join(root, 'fixtures/invalid/entrypoint_missing.json');
+const missingTarget = path.join(root,'fixtures/invalid/flow_target_missing.json');
 const missingConn = path.join(root, 'fixtures/invalid/connection_missing.json');
 
 describe('agentkit validate (stage 1)', () => {
@@ -70,4 +70,30 @@ describe('agentkit validate (stage 1)', () => {
 		const codes = JSON.parse(res.output).findings.map((f: any) => f.code);
 		expect(codes).toContain('E_EXPR_NAMESPACE');
 	});
+
+	it("flags invalid output references", () => {
+		const res = runValidate(outRef, { format: "json", strict: false });
+		expect(res.exitCode).toBe(1);
+		const codes = JSON.parse(res.output).findings.map((f: any) => f.code);
+		expect(codes).toContain("E_OUTPUT_REFERENCE_INVALID");
+	  });
+	  
+	  it("warns on unreachable step (non-strict)", () => {
+		const res = runValidate(unreachable, { format: "json", strict: false });
+		expect(res.exitCode).toBe(0);
+		const codes = JSON.parse(res.output).findings.map((f: any) => f.code);
+		expect(codes).toContain("W_UNREACHABLE_STEP");
+	  });
+	  
+	  it("fails on unreachable step in strict mode", () => {
+		const res = runValidate(unreachable, { format: "json", strict: true });
+		expect(res.exitCode).toBe(1);
+	  });
+	  
+	  it("flags cycles", () => {
+		const res = runValidate(cycle, { format: "json", strict: false });
+		expect(res.exitCode).toBe(1);
+		const codes = JSON.parse(res.output).findings.map((f: any) => f.code);
+		expect(codes).toContain("E_CYCLE_DETECTED");
+	  });
 });

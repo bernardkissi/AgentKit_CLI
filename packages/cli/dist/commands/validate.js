@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.runValidate = runValidate;
 const validator_1 = require("@agentkit/validator");
+const validator_2 = require("@agentkit/validator");
 const load_1 = require("../io/load");
 const text_1 = require("../reporting/text");
 const json_1 = require("../reporting/json");
@@ -22,6 +23,8 @@ function runValidate(filePath, opts) {
             }));
             findings = findings.concat(semantic);
         }
+        const staticFindings = (0, validator_2.analyzeStatic)(doc).map((f) => ({ ...f, file: filePath }));
+        findings = findings.concat(staticFindings);
         const hasErrors = findings.some((f) => f.severity === 'error');
         const hasWarnings = findings.some((f) => f.severity === 'warning');
         const fail = hasErrors || (opts.strict && hasWarnings);

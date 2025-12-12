@@ -100,16 +100,19 @@ export declare const BaseStep: z.ZodObject<{
     id: z.ZodString;
     type: z.ZodString;
     params: z.ZodRecord<z.ZodString, z.ZodAny>;
+    outputs: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodAny>>;
     flow: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodAny>>;
 }, "strict", z.ZodTypeAny, {
     type: string;
     params: Record<string, any>;
     id: string;
+    outputs?: Record<string, any> | undefined;
     flow?: Record<string, any> | undefined;
 }, {
     type: string;
     params: Record<string, any>;
     id: string;
+    outputs?: Record<string, any> | undefined;
     flow?: Record<string, any> | undefined;
 }>;
 export declare const AgentDefinitionSchema: z.ZodObject<{
@@ -220,16 +223,19 @@ export declare const AgentDefinitionSchema: z.ZodObject<{
         id: z.ZodString;
         type: z.ZodString;
         params: z.ZodRecord<z.ZodString, z.ZodAny>;
+        outputs: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodAny>>;
         flow: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodAny>>;
     }, "strict", z.ZodTypeAny, {
         type: string;
         params: Record<string, any>;
         id: string;
+        outputs?: Record<string, any> | undefined;
         flow?: Record<string, any> | undefined;
     }, {
         type: string;
         params: Record<string, any>;
         id: string;
+        outputs?: Record<string, any> | undefined;
         flow?: Record<string, any> | undefined;
     }>, "many">;
     error_handling: z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodAny>>;
@@ -269,6 +275,7 @@ export declare const AgentDefinitionSchema: z.ZodObject<{
         type: string;
         params: Record<string, any>;
         id: string;
+        outputs?: Record<string, any> | undefined;
         flow?: Record<string, any> | undefined;
     }[];
     description?: string | undefined;
@@ -312,6 +319,7 @@ export declare const AgentDefinitionSchema: z.ZodObject<{
         type: string;
         params: Record<string, any>;
         id: string;
+        outputs?: Record<string, any> | undefined;
         flow?: Record<string, any> | undefined;
     }[];
     description?: string | undefined;

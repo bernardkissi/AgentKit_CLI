@@ -16,6 +16,7 @@ exports.BaseStep = zod_1.z.object({
     id: exports.StepId,
     type: exports.StepType,
     params: zod_1.z.record(zod_1.z.any()),
+    outputs: zod_1.z.record(zod_1.z.any()).optional(),
     flow: zod_1.z.record(zod_1.z.any()).optional()
 }).strict();
 exports.AgentDefinitionSchema = zod_1.z.object({

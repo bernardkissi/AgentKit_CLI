@@ -1,0 +1,13 @@
+{
+    "schema_version": "1.0.0",
+    "kind": "agent_definition",
+    "id": "warn_unreachable",
+    "name": "Warn Unreachable",
+    "template_version": "1.0.0",
+    "trigger": { "type": "manual", "config": {} },
+    "flow": { "entrypoint": "a" },
+    "steps": [
+      { "id": "a", "type": "llm.prompt", "params": { "user_prompt": "A" }, "flow": { "end": true } },
+      { "id": "b", "type": "llm.prompt", "params": { "user_prompt": "B" }, "flow": { "end": true } }
+    ]
+  }

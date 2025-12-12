@@ -18,6 +18,7 @@ export const BaseStep = z.object({
   id: StepId,
   type: StepType,
   params: z.record(z.any()),
+  outputs: z.record(z.any()).optional(),
   flow: z.record(z.any()).optional()
 }).strict();
 

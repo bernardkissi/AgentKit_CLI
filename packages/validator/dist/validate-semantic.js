@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.validateSemantic = validateSemantic;
 const expressions_1 = require("@agentkit/expressions");
+const output_references_1 = require("./references/output-references");
 function isNonEmptyString(x) {
     return typeof x === 'string' && x.trim().length > 0;
 }
@@ -42,6 +43,11 @@ function validateSemantic(doc) {
     const findings = [];
     // E_STEP_ID_DUPLICATE
     const seen = new Set();
+    const outputsByStep = new Map();
+    for (const s of doc.steps) {
+        const out = s.outputs && typeof s.outputs === "object" ? Object.keys(s.outputs) : [];
+        outputsByStep.set(s.id, new Set(out));
+    }
     for (let i = 0; i < doc.steps.length; i++) {
         const id = doc.steps[i].id;
         if (seen.has(id)) {
@@ -113,6 +119,28 @@ function validateSemantic(doc) {
                 message: `Illegal expression root namespace "${ns.root ?? "unknown"}". Allowed: input, steps, runtime, connections.`,
                 jsonPath: occ.jsonPath
             });
+        }
+        // E_OUTPUT_REFERENCE_INVALID
+        const outRefs = (0, output_references_1.extractOutputRefs)(occ.expr);
+        for (const r of outRefs) {
+            if (!seen.has(r.stepId)) {
+                findings.push({
+                    code: "E_OUTPUT_REFERENCE_INVALID",
+                    severity: "error",
+                    message: `Expression references steps.${r.stepId}.outputs.${r.key}, but step '${r.stepId}' does not exist.`,
+                    jsonPath: occ.jsonPath
+                });
+                continue;
+            }
+            const declared = outputsByStep.get(r.stepId);
+            if (!declared || declared.size === 0 || !declared.has(r.key)) {
+                findings.push({
+                    code: "E_OUTPUT_REFERENCE_INVALID",
+                    severity: "error",
+                    message: `Expression references steps.${r.stepId}.outputs.${r.key}, but step '${r.stepId}' does not declare output '${r.key}'.`,
+                    jsonPath: occ.jsonPath
+                });
+            }
         }
     }
     return findings;
