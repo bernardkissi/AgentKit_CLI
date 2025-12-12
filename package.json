@@ -1,0 +1,14 @@
+{
+  "name": "agentkit",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "validate:fixtures": "pnpm --filter @agentkit/cli test",
+    "dev": "pnpm --filter @agentkit/cli dev"
+  }
+}

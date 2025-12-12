@@ -1,0 +1,27 @@
+{
+  "name": "@agentkit/cli",
+  "version": "0.1.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "agentkit": "dist/main.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "lint": "echo 'lint placeholder'",
+    "dev": "tsx src/main.ts"
+  },
+  "dependencies": {
+    "@agentkit/schema": "workspace:*",
+    "@agentkit/validator": "workspace:*",
+    "commander": "^12.1.0",
+    "yaml": "^2.5.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.8",
+    "tsx": "^4.19.2",
+    "@types/node": "^22.10.2"
+  }
+}
