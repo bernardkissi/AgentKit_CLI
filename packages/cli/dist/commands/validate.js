@@ -8,25 +8,38 @@ const json_1 = require("../reporting/json");
 function runValidate(filePath, opts) {
     try {
         const { doc } = (0, load_1.loadDoc)(filePath);
-        const res = (0, validator_1.validateStructural)(doc);
+        const structural = (0, validator_1.validateStructural)(doc);
         // attach file to findings
-        const findings = res.findings.map(f => ({ ...f, file: filePath }));
-        const hasErrors = findings.some(f => f.severity === "error");
-        const hasWarnings = findings.some(f => f.severity === "warning");
+        let findings = structural.findings.map((f) => ({
+            ...f,
+            file: filePath,
+        }));
+        // Only run semantic validation if structural validation succeeded
+        if (structural.ok) {
+            const semantic = (0, validator_1.validateSemantic)(doc).map((f) => ({
+                ...f,
+                file: filePath,
+            }));
+            findings = findings.concat(semantic);
+        }
+        const hasErrors = findings.some((f) => f.severity === 'error');
+        const hasWarnings = findings.some((f) => f.severity === 'warning');
         const fail = hasErrors || (opts.strict && hasWarnings);
-        const out = opts.format === "json" ? (0, json_1.renderJson)(findings) : (0, text_1.renderText)(findings);
+        const out = opts.format === 'json' ? (0, json_1.renderJson)(findings) : (0, text_1.renderText)(findings);
         return { exitCode: fail ? 1 : 0, output: out };
     }
     catch (e) {
         const msg = e?.message || String(e);
-        const findings = [{
-                code: "E_CLI_INTERNAL",
-                severity: "error",
+        const findings = [
+            {
+                code: 'E_CLI_INTERNAL',
+                severity: 'error',
                 message: msg,
                 file: filePath,
-                jsonPath: "$"
-            }];
-        const out = opts.format === "json" ? (0, json_1.renderJson)(findings) : (0, text_1.renderText)(findings);
+                jsonPath: '$',
+            },
+        ];
+        const out = opts.format === 'json' ? (0, json_1.renderJson)(findings) : (0, text_1.renderText)(findings);
         return { exitCode: 2, output: out };
     }
 }

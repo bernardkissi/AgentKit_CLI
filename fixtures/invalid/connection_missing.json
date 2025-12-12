@@ -1,0 +1,23 @@
+{
+    "schema_version": "1.0.0",
+    "kind": "agent_definition",
+    "id": "bad_connection",
+    "name": "Bad Connection",
+    "template_version": "1.0.0",
+    "trigger": { "type": "manual", "config": {} },
+    "flow": { "entrypoint": "send_email" },
+    "runtime": {
+      "connections": {
+        "gmail_account_1": { "integration_type": "gmail", "integration_id": "int_gmail_123" }
+      }
+    },
+    "steps": [
+      {
+        "id": "send_email",
+        "type": "action.gmail.send_email",
+        "params": { "connection": "missing_conn", "to": "a@b.com", "subject": "s", "body": "b" },
+        "flow": { "end": true }
+      }
+    ]
+  }
+  

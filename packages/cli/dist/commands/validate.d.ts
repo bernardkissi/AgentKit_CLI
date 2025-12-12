@@ -1,5 +1,5 @@
 export interface ValidateOptions {
-    format: "text" | "json";
+    format: 'text' | 'json';
     strict: boolean;
 }
 export declare function runValidate(filePath: string, opts: ValidateOptions): {

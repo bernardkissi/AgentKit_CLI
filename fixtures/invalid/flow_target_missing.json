@@ -1,0 +1,13 @@
+{
+    "schema_version": "1.0.0",
+    "kind": "agent_definition",
+    "id": "bad_flow_target",
+    "name": "Bad Flow Target",
+    "template_version": "1.0.0",
+    "trigger": { "type": "manual", "config": {} },
+    "flow": { "entrypoint": "step1" },
+    "steps": [
+      { "id": "step1", "type": "llm.prompt", "params": { "user_prompt": "Hello" }, "flow": { "next": "missing_step" } }
+    ]
+  }
+  

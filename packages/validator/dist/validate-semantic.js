@@ -1,0 +1,96 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.validateSemantic = validateSemantic;
+function isNonEmptyString(x) {
+    return typeof x === 'string' && x.trim().length > 0;
+}
+function collectFlowTargets(step) {
+    const out = [];
+    const flow = step.flow ?? {};
+    // Common pointer keys (works for base steps + control steps)
+    const keys = [
+        'next',
+        'on_error_next',
+        'true_next',
+        'false_next',
+        'approved_next',
+        'rejected_next',
+    ];
+    for (const k of keys) {
+        if (isNonEmptyString(flow[k])) {
+            out.push({
+                jsonPath: `$.steps[?(@.id=="${step.id}")].flow.${k}`,
+                target: String(flow[k]),
+            });
+        }
+    }
+    // switch-style cases: flow.cases = { key: "stepId", default: "stepId" }
+    if (flow.cases && typeof flow.cases === 'object') {
+        for (const [caseKey, v] of Object.entries(flow.cases)) {
+            if (isNonEmptyString(v)) {
+                out.push({
+                    jsonPath: `$.steps[?(@.id=="${step.id}")].flow.cases.${caseKey}`,
+                    target: String(v),
+                });
+            }
+        }
+    }
+    return out;
+}
+function validateSemantic(doc) {
+    const findings = [];
+    // E_STEP_ID_DUPLICATE
+    const seen = new Set();
+    for (let i = 0; i < doc.steps.length; i++) {
+        const id = doc.steps[i].id;
+        if (seen.has(id)) {
+            findings.push({
+                code: 'E_STEP_ID_DUPLICATE',
+                severity: 'error',
+                message: `Duplicate step id '${id}'. Step IDs must be unique within an agent.`,
+                jsonPath: `$.steps[${i}].id`,
+            });
+        }
+        else {
+            seen.add(id);
+        }
+    }
+    // E_FLOW_ENTRYPOINT_MISSING
+    if (!seen.has(doc.flow.entrypoint)) {
+        findings.push({
+            code: 'E_FLOW_ENTRYPOINT_MISSING',
+            severity: 'error',
+            message: `Entrypoint '${doc.flow.entrypoint}' does not match any step.id.`,
+            jsonPath: '$.flow.entrypoint',
+        });
+    }
+    // E_FLOW_TARGET_MISSING
+    for (const step of doc.steps) {
+        const targets = collectFlowTargets(step);
+        for (const t of targets) {
+            if (!seen.has(t.target)) {
+                findings.push({
+                    code: 'E_FLOW_TARGET_MISSING',
+                    severity: 'error',
+                    message: `Flow target '${t.target}' referenced by step '${step.id}' does not exist.`,
+                    jsonPath: t.jsonPath,
+                });
+            }
+        }
+    }
+    // E_CONNECTION_MISSING (Stage 2 heuristic: params.connection)
+    const connections = doc.runtime?.connections ?? {};
+    for (const step of doc.steps) {
+        const conn = step?.params?.connection;
+        if (isNonEmptyString(conn) && !(conn in connections)) {
+            findings.push({
+                code: 'E_CONNECTION_MISSING',
+                severity: 'error',
+                message: `Step '${step.id}' references connection '${conn}', but runtime.connections does not define it.`,
+                jsonPath: `$.steps[?(@.id=="${step.id}")].params.connection`,
+            });
+        }
+    }
+    return findings;
+}
+//# sourceMappingURL=validate-semantic.js.map

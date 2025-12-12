@@ -1,0 +1,14 @@
+{
+    "schema_version": "1.0.0",
+    "kind": "agent_definition",
+    "id": "bad_agent",
+    "name": "Bad Agent",
+    "template_version": "1.0.0",
+    "trigger": { "type": "manual", "config": {} },
+    "flow": { "entrypoint": "step1" },
+    "steps": [
+      { "id": "step1", "type": "llm.prompt", "params": { "user_prompt": "Hello" }, "flow": { "end": true } },
+      { "id": "step1", "type": "llm.prompt", "params": { "user_prompt": "Hi again" }, "flow": { "end": true } }
+    ]
+  }
+  

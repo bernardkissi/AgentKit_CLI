@@ -1,0 +1,13 @@
+{
+    "schema_version": "1.0.0",
+    "kind": "agent_definition",
+    "id": "bad_agent_entry",
+    "name": "Bad Entrypoint",
+    "template_version": "1.0.0",
+    "trigger": { "type": "manual", "config": {} },
+    "flow": { "entrypoint": "missing_step" },
+    "steps": [
+      { "id": "step1", "type": "llm.prompt", "params": { "user_prompt": "Hello" }, "flow": { "end": true } }
+    ]
+  }
+  
