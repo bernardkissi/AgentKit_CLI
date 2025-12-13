@@ -1,8 +1,11 @@
 {
   "name": "@agentkit/cli",
   "version": "0.1.0",
+  "author": "Bernard Kissi",
+  "license": "MIT",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "files": ["dist/**"],
   "bin": {
     "agentkit": "dist/main.js"
   },

@@ -1,14 +1,19 @@
 import type { Finding } from '@agentkit/validator';
-import { validateStructural, validateSemantic } from '@agentkit/validator';
-import { analyzeStatic } from "@agentkit/validator"
-
+import { validateStructural, validateSemantic, analyzeStatic, lintAgent } from '@agentkit/validator';
+import { BUILTIN_POLICIES, applyPolicy } from "@agentkit/validator";
 import { loadDoc } from '../io/load';
 import { renderText } from '../reporting/text';
 import { renderJson } from '../reporting/json';
 
+
+function getBuiltInPolicy(name: string) {
+	return BUILTIN_POLICIES.find((p: any) => p.name === name) ?? BUILTIN_POLICIES[0]; // default fallback
+}
+
 export interface ValidateOptions {
 	format: 'text' | 'json';
-	strict: boolean;
+	policy?: string; // default|strict|runtime|ci
+	strict?: boolean; // legacy flag to force strict policy
 }
 
 export function runValidate(
@@ -16,6 +21,7 @@ export function runValidate(
 	opts: ValidateOptions
 ): { exitCode: number; output: string } {
 	try {
+		const effectivePolicy = opts.strict ? 'strict' : (opts.policy ?? 'default');
 		const { doc } = loadDoc(filePath);
 		const structural = validateStructural(doc);
 
@@ -35,11 +41,18 @@ export function runValidate(
 		}
 
 		const staticFindings = analyzeStatic(doc as any).map((f) => ({ ...f, file: filePath }));
-findings = findings.concat(staticFindings);
+		findings = findings.concat(staticFindings);
+
+		// Lint-style warnings
+		const lintFindings = lintAgent(doc as any).map((f) => ({ ...f, file: filePath }));
+		findings = findings.concat(lintFindings);
+
+		const policyPack = getBuiltInPolicy(effectivePolicy);
+		findings = applyPolicy(findings, policyPack);
 
 		const hasErrors = findings.some((f) => f.severity === 'error');
 		const hasWarnings = findings.some((f) => f.severity === 'warning');
-		const fail = hasErrors || (opts.strict && hasWarnings);
+		const fail = hasErrors || (effectivePolicy === 'strict' && hasWarnings);
 
 		const out =
 			opts.format === 'json' ? renderJson(findings) : renderText(findings);

@@ -5,3 +5,6 @@ export * from "./analyze-static";
 export * from "./lint";
 export * from "./rule-catalog";
 export * from "./normalize";
+export * from "./policy/types";
+export * from "./policy/builtins";
+export * from "./policy/apply";

@@ -135,6 +135,22 @@ export const RULES: Record<string, RuleMeta> = {
         description: "Action step lacks params.idempotency_key.",
         hint: "Add params.idempotency_key for safe retries.",
         rfc: "RFC-0014"
+    },
+    E_STEP_TYPE_UNKNOWN: {
+        code: "E_STEP_TYPE_UNKNOWN",
+        defaultSeverity: "error",
+        title: "Unknown step type",
+        description: "Step type is not registered.",
+        hint: "Add the step type to the registry or fix the step type.",
+        rfc: "RFC-0014"
+    },
+    E_STEP_PARAMS_INVALID: {
+        code: "E_STEP_PARAMS_INVALID",
+        defaultSeverity: "error",
+        title: "Invalid step params",
+        description: "Step params do not match the expected schema.",
+        hint: "Fix the params to match the expected schema.",
+        rfc: "RFC-0014"
     }
 };
 

@@ -2,6 +2,7 @@ import type { AgentDefinition } from '@agentkit/schema';
 import { extractExpressions, parseExpression, validateNamespace } from "@agentkit/expressions";
 import { extractOutputRefs } from "./references/output-references";
 import type { Finding } from './types';
+import { StepRegistry } from "@agentkit/schema";
 
 function isNonEmptyString(x: unknown): x is string {
 	return typeof x === 'string' && x.trim().length > 0;
@@ -59,7 +60,7 @@ export function validateSemantic(doc: AgentDefinition): Finding[] {
 		const out = s.outputs && typeof s.outputs === "object" ? Object.keys(s.outputs) : [];
 		outputsByStep.set(s.id, new Set(out));
 	}
-	
+
 	for (let i = 0; i < doc.steps.length; i++) {
 		const id = doc.steps[i].id;
 		if (seen.has(id)) {
@@ -113,39 +114,64 @@ export function validateSemantic(doc: AgentDefinition): Finding[] {
 		}
 	}
 
-      // E_EXPR_PARSE / E_EXPR_NAMESPACE
-    const occurrences = extractExpressions(doc, "$");
-    for (const occ of occurrences) {
-        const parsed = parseExpression(occ.expr);
-        if (!parsed.ok) {
-        findings.push({
-            code: "E_EXPR_PARSE",
-            severity: "error",
-            message: `Invalid expression: ${parsed.error}. Expression: "${occ.expr}"`,
-            jsonPath: occ.jsonPath
-        });
-        continue;
-        }
+	// E_STEP_TYPE_UNKNOWN / E_STEP_PARAMS_INVALID
+	for (const step of doc.steps as any[]) {
+		const def = (StepRegistry as any)[step.type];
+		if (!def) {
+			findings.push({
+				code: "E_STEP_TYPE_UNKNOWN",
+				severity: "error",
+				message: `Unknown step type '${step.type}'.`,
+				jsonPath: `$.steps[?(@.id=="${step.id}")].type`
+			});
+			continue;
+		}
 
-        const ns = validateNamespace(occ.expr);
-        if (!ns.ok) {
-        findings.push({
-            code: "E_EXPR_NAMESPACE",
-            severity: "error",
-            message: `Illegal expression root namespace "${ns.root ?? "unknown"}". Allowed: input, steps, runtime, connections.`,
-            jsonPath: occ.jsonPath
-        });
-        }
+		const parsed = def.paramsSchema.safeParse(step.params ?? {});
+		if (!parsed.success) {
+			findings.push({
+				code: "E_STEP_PARAMS_INVALID",
+				severity: "error",
+				message: `Invalid params for step type '${step.type}': ` +
+					parsed.error.issues.map((i: any) => `${i.path.join(".") || "$"}: ${i.message}`).join("; "),
+				jsonPath: `$.steps[?(@.id=="${step.id}")].params`
+			});
+		}
+	}
+
+	// E_EXPR_PARSE / E_EXPR_NAMESPACE
+	const occurrences = extractExpressions(doc, "$");
+	for (const occ of occurrences) {
+		const parsed = parseExpression(occ.expr);
+		if (!parsed.ok) {
+			findings.push({
+				code: "E_EXPR_PARSE",
+				severity: "error",
+				message: `Invalid expression: ${parsed.error}. Expression: "${occ.expr}"`,
+				jsonPath: occ.jsonPath
+			});
+			continue;
+		}
+
+		const ns = validateNamespace(occ.expr);
+		if (!ns.ok) {
+			findings.push({
+				code: "E_EXPR_NAMESPACE",
+				severity: "error",
+				message: `Illegal expression root namespace "${ns.root ?? "unknown"}". Allowed: input, steps, runtime, connections.`,
+				jsonPath: occ.jsonPath
+			});
+		}
 
 		// E_OUTPUT_REFERENCE_INVALID
 		const outRefs = extractOutputRefs(occ.expr);
 		for (const r of outRefs) {
 			if (!seen.has(r.stepId)) {
 				findings.push({
-				code: "E_OUTPUT_REFERENCE_INVALID",
-				severity: "error",
-				message: `Expression references steps.${r.stepId}.outputs.${r.key}, but step '${r.stepId}' does not exist.`,
-				jsonPath: occ.jsonPath
+					code: "E_OUTPUT_REFERENCE_INVALID",
+					severity: "error",
+					message: `Expression references steps.${r.stepId}.outputs.${r.key}, but step '${r.stepId}' does not exist.`,
+					jsonPath: occ.jsonPath
 				});
 				continue;
 			}
@@ -153,17 +179,14 @@ export function validateSemantic(doc: AgentDefinition): Finding[] {
 			const declared = outputsByStep.get(r.stepId);
 			if (!declared || declared.size === 0 || !declared.has(r.key)) {
 				findings.push({
-				code: "E_OUTPUT_REFERENCE_INVALID",
-				severity: "error",
-				message: `Expression references steps.${r.stepId}.outputs.${r.key}, but step '${r.stepId}' does not declare output '${r.key}'.`,
-				jsonPath: occ.jsonPath
+					code: "E_OUTPUT_REFERENCE_INVALID",
+					severity: "error",
+					message: `Expression references steps.${r.stepId}.outputs.${r.key}, but step '${r.stepId}' does not declare output '${r.key}'.`,
+					jsonPath: occ.jsonPath
 				});
 			}
 		}
-    }
-	
-	
-
+	}
 
 	return findings;
 }

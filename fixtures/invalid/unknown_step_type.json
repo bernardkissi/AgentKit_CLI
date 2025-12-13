@@ -1,0 +1,12 @@
+{
+  "schema_version": "1.0.0",
+  "kind": "agent_definition",
+  "id": "bad_step_type",
+  "name": "Bad Step Type",
+  "template_version": "1.0.0",
+  "trigger": { "type": "manual", "config": {} },
+  "flow": { "entrypoint": "a" },
+  "steps": [
+    { "id": "a", "type": "unknown.type", "params": { "x": 1 }, "flow": { "end": true } }
+  ]
+}

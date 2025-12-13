@@ -18,9 +18,11 @@ program
   .argument("<file>", "Agent definition file (.json|.yaml|.yml)")
   .option("--format <format>", "Output format: text|json", "text")
   .option("--strict", "Treat warnings as errors", false)
+  .option("--policy <policy>", "Validation policy: default|strict|runtime|ci", "default")
   .action((file: string, options: any) => {
     const format = (options.format === "json") ? "json" : "text";
-    const { exitCode, output } = runValidate(file, { format, strict: !!options.strict });
+    const policy = options.strict ? "strict" : options.policy;
+    const { exitCode, output } = runValidate(file, { format, policy });
     process.stdout.write(output);
     process.exit(exitCode);
   });
@@ -51,9 +53,11 @@ program
   .argument("<file>", "Agent definition file (.json|.yaml|.yml)")
   .option("--format <format>", "Output format: text|json", "text")
   .option("--strict", "Fail on warnings", false)
+  .option("--policy <policy>", "Validation policy: default|strict|runtime|ci", "default")
   .action((file: string, options: any) => {
     const format = options.format === "json" ? "json" : "text";
-    const { exitCode, output } = runLint(file, { format, strict: !!options.strict });
+    const policy = options.strict ? "strict" : options.policy;
+    const { exitCode, output } = runLint(file, { format, policy });
     process.stdout.write(output);
     process.exit(exitCode);
   });
@@ -66,4 +70,5 @@ program
     process.stdout.write(output);
     process.exit(exitCode);
   });
+
 program.parse(process.argv);
