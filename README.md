@@ -24,4 +24,8 @@ cat dist/agent-definition.schema.json | head
 # lint
 pnpm --filter @agentkit/cli dev -- lint fixtures/warnings/lint_warnings.json --format json
 pnpm --filter @agentkit/cli dev -- lint fixtures/warnings/lint_warnings.json --format json --strict
+
+# rules check
+pnpm --filter @agentkit/cli dev -- rules
+pnpm --filter @agentkit/cli dev -- rules --code E_FLOW_TARGET_MISSING
 ```

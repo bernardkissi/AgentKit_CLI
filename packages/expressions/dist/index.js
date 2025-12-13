@@ -18,4 +18,5 @@ __exportStar(require("./types"), exports);
 __exportStar(require("./extract"), exports);
 __exportStar(require("./parse"), exports);
 __exportStar(require("./validate"), exports);
+__exportStar(require("./tokenize"), exports);
 //# sourceMappingURL=index.js.map

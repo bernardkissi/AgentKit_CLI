@@ -6,6 +6,7 @@ const validate_1 = require("./commands/validate");
 const fmt_1 = require("./commands/fmt");
 const gen_schema_1 = require("./commands/gen-schema");
 const lint_1 = require("./commands/lint");
+const rules_1 = require("./commands/rules");
 const program = new commander_1.Command();
 program
     .name("agentkit")
@@ -51,6 +52,14 @@ program
     .action((file, options) => {
     const format = options.format === "json" ? "json" : "text";
     const { exitCode, output } = (0, lint_1.runLint)(file, { format, strict: !!options.strict });
+    process.stdout.write(output);
+    process.exit(exitCode);
+});
+program
+    .command("rules")
+    .option("--code <code>", "Show details for a single rule code")
+    .action((options) => {
+    const { exitCode, output } = (0, rules_1.runRules)({ code: options.code });
     process.stdout.write(output);
     process.exit(exitCode);
 });

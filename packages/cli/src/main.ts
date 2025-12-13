@@ -4,6 +4,7 @@ import { runValidate } from "./commands/validate";
 import { runFmt } from "./commands/fmt";
 import { runGenSchema } from "./commands/gen-schema";
 import { runLint } from "./commands/lint";
+import { runRules } from "./commands/rules";
 
 const program = new Command();
 
@@ -57,4 +58,12 @@ program
     process.exit(exitCode);
   });
 
+program
+  .command("rules")
+  .option("--code <code>", "Show details for a single rule code")
+  .action((options: any) => {
+    const { exitCode, output } = runRules({ code: options.code });
+    process.stdout.write(output);
+    process.exit(exitCode);
+  });
 program.parse(process.argv);

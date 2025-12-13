@@ -19,4 +19,6 @@ __exportStar(require("./validate-structural"), exports);
 __exportStar(require("./validate-semantic"), exports);
 __exportStar(require("./analyze-static"), exports);
 __exportStar(require("./lint"), exports);
+__exportStar(require("./rule-catalog"), exports);
+__exportStar(require("./normalize"), exports);
 //# sourceMappingURL=index.js.map
