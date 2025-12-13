@@ -11,7 +11,10 @@
     "lint": "pnpm -r lint",
     "check": "pnpm lint && pnpm -r build && pnpm -r test",
     "validate:fixtures": "pnpm --filter @agentkit/cli test",
-    "dev": "pnpm --filter @agentkit/cli dev"
+    "dev": "pnpm --filter @agentkit/cli dev",
+    "deps:update": "pnpm -r up --latest",
+    "deps:audit": "pnpm audit",
+    "deps:check": "pnpm audit --audit-level=high"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^8.49.0",

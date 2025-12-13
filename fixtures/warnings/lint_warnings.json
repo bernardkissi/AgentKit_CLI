@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0.0",
+  "kind": "agent_definition",
+  "id": "lint_warn",
+  "name": "Lint Warn",
+  "template_version": "1.0.0",
+  "trigger": { "type": "manual", "config": {} },
+  "flow": { "entrypoint": "a" },
+  "steps": [
+    { "id": "a", "type": "action.gmail.send_email", "params": { "connection": "c1" }, "flow": { "end": true } }
+  ],
+  "runtime": { "connections": { "c1": { "integration_type": "gmail", "integration_id": "x" } } }
+}

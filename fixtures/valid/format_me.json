@@ -1,0 +1,1 @@
+{ "steps":[{"params":{"user_prompt":"Hi"},"type":"llm.prompt","id":"s1","flow":{"end":true}}],"flow":{"entrypoint":"s1"},"trigger":{"type":"manual","config":{}},"template_version":"1.0.0","name":"Fmt","id":"fmt_agent","kind":"agent_definition","schema_version":"1.0.0" }

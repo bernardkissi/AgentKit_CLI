@@ -1,0 +1,234 @@
+{
+  "$ref": "#/definitions/AgentDefinition",
+  "definitions": {
+    "AgentDefinition": {
+      "type": "object",
+      "properties": {
+        "schema_version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$"
+        },
+        "kind": {
+          "type": "string",
+          "const": "agent_definition"
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string"
+        },
+        "template_version": {
+          "$ref": "#/definitions/AgentDefinition/properties/schema_version"
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": {}
+        },
+        "trigger": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "const": "manual"
+                },
+                "config": {
+                  "type": "object",
+                  "additionalProperties": {},
+                  "default": {}
+                }
+              },
+              "required": [
+                "type"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "const": "schedule"
+                },
+                "config": {
+                  "type": "object",
+                  "properties": {
+                    "cron": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "timezone": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "cron"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "type",
+                "config"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "const": "webhook"
+                },
+                "config": {
+                  "type": "object",
+                  "properties": {
+                    "path": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "auth": {
+                      "type": "string",
+                      "enum": [
+                        "none",
+                        "workspace",
+                        "shared_secret"
+                      ],
+                      "default": "workspace"
+                    }
+                  },
+                  "required": [
+                    "path"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "type",
+                "config"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "const": "event"
+                },
+                "config": {
+                  "type": "object",
+                  "properties": {
+                    "source": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "event_type": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "resource": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "source",
+                    "event_type",
+                    "resource"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "type",
+                "config"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        },
+        "inputs": {
+          "type": "object",
+          "additionalProperties": {}
+        },
+        "runtime": {
+          "type": "object",
+          "additionalProperties": {}
+        },
+        "flow": {
+          "type": "object",
+          "properties": {
+            "entrypoint": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "^[a-zA-Z][a-zA-Z0-9_-]*$"
+            }
+          },
+          "required": [
+            "entrypoint"
+          ],
+          "additionalProperties": false
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "$ref": "#/definitions/AgentDefinition/properties/flow/properties/entrypoint"
+              },
+              "type": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^[a-z][a-z0-9_]*(\\.[a-z0-9_]+)+$"
+              },
+              "params": {
+                "type": "object",
+                "additionalProperties": {}
+              },
+              "outputs": {
+                "type": "object",
+                "additionalProperties": {}
+              },
+              "flow": {
+                "type": "object",
+                "additionalProperties": {}
+              }
+            },
+            "required": [
+              "id",
+              "type",
+              "params"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1
+        },
+        "error_handling": {
+          "type": "object",
+          "additionalProperties": {}
+        }
+      },
+      "required": [
+        "schema_version",
+        "kind",
+        "id",
+        "name",
+        "template_version",
+        "trigger",
+        "flow",
+        "steps"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#"
+}

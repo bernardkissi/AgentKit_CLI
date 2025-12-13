@@ -16,7 +16,8 @@
     "@agentkit/schema": "workspace:*",
     "@agentkit/validator": "workspace:*",
     "commander": "^12.1.0",
-    "yaml": "^2.5.1"
+    "yaml": "^2.5.1",
+    "zod-to-json-schema": "^3.2.1"
   },
   "devDependencies": {
     "typescript": "^5.6.3",
