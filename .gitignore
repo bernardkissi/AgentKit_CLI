@@ -1,1 +1,10 @@
 node_modules
+.DS_Store
+*.log
+pnpm-debug.log
+coverage
+*.tsbuildinfo
+
+# build artifacts
+/dist
+/packages/*/dist
