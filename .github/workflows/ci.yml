@@ -21,17 +21,17 @@ jobs:
       - run: pnpm deps:check
       - run: pnpm --filter @agentkit/cli dev -- gen schema --out dist
       - name: Validate strict (example.json)
-        run: pnpm --filter @agentkit/cli dev -- validate "$GITHUB_WORKSPACE/fixtures/valid/example.json" --policy strict --format json
+        run: node packages/cli/dist/main.js validate "$GITHUB_WORKSPACE/fixtures/valid/example.json" --policy strict --format json
       - name: Bundle pack (example.json)
         run: |
           mkdir -p "$GITHUB_WORKSPACE/dist"
-          AGENTKIT_HOME=$RUNNER_TEMP/agentkit-keys pnpm --filter @agentkit/cli dev -- bundle pack "$GITHUB_WORKSPACE/fixtures/valid/example.json" --out "$GITHUB_WORKSPACE/dist/example.agentkit"
+          AGENTKIT_HOME=$RUNNER_TEMP/agentkit-keys node packages/cli/dist/main.js bundle pack "$GITHUB_WORKSPACE/fixtures/valid/example.json" --out "$GITHUB_WORKSPACE/dist/example.agentkit"
           ls -l "$GITHUB_WORKSPACE/dist" || true
       - name: Bundle verify
         run: |
           ls -l "$GITHUB_WORKSPACE/dist" || true
-          AGENTKIT_HOME=$RUNNER_TEMP/agentkit-keys pnpm --filter @agentkit/cli dev -- bundle verify "$GITHUB_WORKSPACE/dist/example.agentkit"
+          AGENTKIT_HOME=$RUNNER_TEMP/agentkit-keys node packages/cli/dist/main.js bundle verify "$GITHUB_WORKSPACE/dist/example.agentkit"
       - name: Runtime admit
         run: |
           ls -l "$GITHUB_WORKSPACE/dist" || true
-          AGENTKIT_HOME=$RUNNER_TEMP/agentkit-keys pnpm --filter @agentkit/cli dev -- admit "$GITHUB_WORKSPACE/dist/example.agentkit" --policy runtime
+          AGENTKIT_HOME=$RUNNER_TEMP/agentkit-keys node packages/cli/dist/main.js admit "$GITHUB_WORKSPACE/dist/example.agentkit" --policy runtime
