@@ -7,4 +7,13 @@ export interface BundleManifest {
         assets?: Record<string, string>;
     };
     metadata?: Record<string, any>;
+    plugins?: {
+        resolved: Array<{
+            source: "npm" | "local";
+            name?: string;
+            version?: string;
+            path?: string;
+            spec: string;
+        }>;
+    };
 }

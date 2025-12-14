@@ -20,4 +20,11 @@ jobs:
       - run: pnpm test
       - run: pnpm deps:check
       - run: pnpm --filter @agentkit/cli dev -- gen schema --out dist
-      - run: test -f dist/agent-definition.schema.json
+      - name: Validate strict (example.json)
+        run: pnpm --filter @agentkit/cli dev -- validate fixtures/valid/example.json --policy strict --format json
+      - name: Bundle pack (example.json)
+        run: AGENTKIT_HOME=$RUNNER_TEMP/agentkit-keys pnpm --filter @agentkit/cli dev -- bundle pack fixtures/valid/example.json --out dist/example.agentkit
+      - name: Bundle verify
+        run: AGENTKIT_HOME=$RUNNER_TEMP/agentkit-keys pnpm --filter @agentkit/cli dev -- bundle verify dist/example.agentkit
+      - name: Runtime admit
+        run: AGENTKIT_HOME=$RUNNER_TEMP/agentkit-keys pnpm --filter @agentkit/cli dev -- admit dist/example.agentkit --policy runtime

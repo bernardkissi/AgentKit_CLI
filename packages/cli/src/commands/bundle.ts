@@ -5,6 +5,8 @@ import AdmZip from "adm-zip";
 import { runFmt } from "./fmt";
 import type { BundleManifest } from "../bundle/manifest";
 import { sign, verify } from "../bundle/crypto";
+import { loadConfig } from "../config/config";
+import { loadTrustedPluginRegistries } from "@agentkit/registry";
 
 export interface VerifiedBundle {
     manifest: BundleManifest;
@@ -25,19 +27,19 @@ function asBuffer(value: Buffer | string) {
 
 export function verifyBundle(bundlePath: string): VerifiedBundle {
     const zip = new AdmZip(bundlePath);
-    const manifestEntry = zip.getEntry("manifest.json");
-    const sigEntry = zip.getEntry("signatures/manifest.sig");
+        const manifestEntry = zip.getEntry("manifest.json");
+        const sigEntry = zip.getEntry("signatures/manifest.sig");
 
-    if (!manifestEntry || !sigEntry) {
-        throw new Error("E_BUNDLE_SIGNATURE_INVALID: manifest or signature missing");
-    }
+        if (!manifestEntry || !sigEntry) {
+            throw new Error("E_BUNDLE_ATTESTATION_INVALID: manifest or signature missing");
+        }
 
-    const manifestJson = manifestEntry.getData().toString("utf8");
-    const sig = sigEntry.getData();
-    const okSig = verify(manifestJson, sig);
-    if (!okSig) {
-        throw new Error("E_BUNDLE_SIGNATURE_INVALID: signature check failed");
-    }
+        const manifestJson = manifestEntry.getData().toString("utf8");
+        const sig = sigEntry.getData();
+        const okSig = verify(manifestJson, sig);
+        if (!okSig) {
+            throw new Error("E_BUNDLE_ATTESTATION_INVALID: signature check failed");
+        }
 
     const manifest: BundleManifest = JSON.parse(manifestJson);
     const agentEntry = zip.getEntry(manifest.agent_path);
@@ -55,6 +57,9 @@ export function verifyBundle(bundlePath: string): VerifiedBundle {
 
 export async function runBundlePack(agentPath: string, outFile: string): Promise<{ exitCode: number; output?: string }> {
     try {
+        const projectRoot = process.cwd();
+        const cfg = loadConfig(projectRoot);
+
         const fmt = runFmt(agentPath, { stdout: true });
         if (fmt.exitCode !== 0 || !fmt.output) {
             throw new Error(`Failed to format agent: ${fmt.output ?? ""}`);
@@ -63,13 +68,22 @@ export async function runBundlePack(agentPath: string, outFile: string): Promise
         const agentFileName = path.basename(agentPath);
         const agentBuf = asBuffer(fmt.output);
 
+        const { provenance } = await loadTrustedPluginRegistries({
+            plugins: cfg.plugins ?? [],
+            projectRoot,
+            trustAllow: cfg.trust?.allow,
+            trustDeny: cfg.trust?.deny,
+            requirePins: false
+        });
+
         const manifest: BundleManifest = {
             format_version: "1.0",
             agent_path: agentFileName,
             created_at: new Date().toISOString(),
             sha256: {
                 agent: sha256(agentBuf)
-            }
+            },
+            plugins: provenance.length ? { resolved: provenance } : undefined
         };
 
         const manifestJson = JSON.stringify(manifest, null, 2) + "\n";

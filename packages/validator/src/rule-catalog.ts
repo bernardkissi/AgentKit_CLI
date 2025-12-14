@@ -184,6 +184,22 @@ export const RULES: Record<string, RuleMeta> = {
         hint: "Add the plugin to the registry or fix the plugin name.",
         rfc: "RFC-0014"
     },
+    E_BUNDLE_ATTESTATION_INVALID: {
+        code: "E_BUNDLE_ATTESTATION_INVALID",
+        defaultSeverity: "error",
+        title: "Bundle attestation invalid",
+        description: "Bundle manifest signature failed verification or is missing.",
+        hint: "Regenerate the bundle with a trusted keypair and re-sign.",
+        rfc: "RFC-0015"
+    },
+    E_BUNDLE_PROVENANCE_MISMATCH: {
+        code: "E_BUNDLE_PROVENANCE_MISMATCH",
+        defaultSeverity: "error",
+        title: "Bundle provenance mismatch",
+        description: "Bundle provenance could not be verified against declared sources.",
+        hint: "Recreate the bundle with correct plugin sources and lockfiles.",
+        rfc: "RFC-0015"
+    },
     E_BUNDLE_SIGNATURE_INVALID: {
         code: "E_BUNDLE_SIGNATURE_INVALID",
         defaultSeverity: "error",

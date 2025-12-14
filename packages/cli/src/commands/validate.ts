@@ -111,6 +111,23 @@ export async function runValidate(
 		return { exitCode: hasErrors ? 1 : 0, output: out };
 	} catch (e: any) {
 		const msg = e?.message || String(e);
+		const match = /^(E_[A-Z0-9_]+)(?::\s*)?(.*)$/m.exec(msg);
+		if (match) {
+			const code = match[1];
+			const message = match[2]?.trim() || msg;
+			const findings: Finding[] = [
+				{
+					code,
+					severity: 'error',
+					message,
+					file: filePath,
+					jsonPath: '$',
+				},
+			];
+			const out = opts.format === 'json' ? renderJson(findings) : renderText(findings);
+			return { exitCode: 1, output: out };
+		}
+
 		const findings: Finding[] = [
 			{
 				code: 'E_CLI_INTERNAL',

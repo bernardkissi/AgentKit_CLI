@@ -24,7 +24,7 @@ export const POLICY_RUNTIME: PolicyPack = {
 
 export const POLICY_CI: PolicyPack = {
     name: "ci",
-    description: "CI policy: strict + governance checks.",
+    description: "CI policy: strict + governance checks (warnings escalated, pins enforced in CLI).",
     enabled: {},
     severityOverrides: {}
 };
