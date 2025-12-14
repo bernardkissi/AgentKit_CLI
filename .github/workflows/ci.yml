@@ -23,8 +23,10 @@ jobs:
       - name: Validate strict (example.json)
         run: pnpm --filter @agentkit/cli dev -- validate "$GITHUB_WORKSPACE/fixtures/valid/example.json" --policy strict --format json
       - name: Bundle pack (example.json)
-        run: AGENTKIT_HOME=$RUNNER_TEMP/agentkit-keys pnpm --filter @agentkit/cli dev -- bundle pack "$GITHUB_WORKSPACE/fixtures/valid/example.json" --out "$RUNNER_TEMP/example.agentkit"
+        run: |
+          mkdir -p dist
+          AGENTKIT_HOME=$RUNNER_TEMP/agentkit-keys pnpm --filter @agentkit/cli dev -- bundle pack "$GITHUB_WORKSPACE/fixtures/valid/example.json" --out "$GITHUB_WORKSPACE/dist/example.agentkit"
       - name: Bundle verify
-        run: AGENTKIT_HOME=$RUNNER_TEMP/agentkit-keys pnpm --filter @agentkit/cli dev -- bundle verify "$RUNNER_TEMP/example.agentkit"
+        run: AGENTKIT_HOME=$RUNNER_TEMP/agentkit-keys pnpm --filter @agentkit/cli dev -- bundle verify "$GITHUB_WORKSPACE/dist/example.agentkit"
       - name: Runtime admit
-        run: AGENTKIT_HOME=$RUNNER_TEMP/agentkit-keys pnpm --filter @agentkit/cli dev -- admit "$RUNNER_TEMP/example.agentkit" --policy runtime
+        run: AGENTKIT_HOME=$RUNNER_TEMP/agentkit-keys pnpm --filter @agentkit/cli dev -- admit "$GITHUB_WORKSPACE/dist/example.agentkit" --policy runtime
