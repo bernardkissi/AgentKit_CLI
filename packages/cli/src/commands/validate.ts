@@ -1,13 +1,25 @@
 import type { Finding } from '@agentkit/validator';
-import { validateStructural, validateSemantic, analyzeStatic, lintAgent } from '@agentkit/validator';
-import { BUILTIN_POLICIES, applyPolicy } from "@agentkit/validator";
+import {
+	validateStructural,
+	BUILTIN_POLICIES,
+	applyPolicy,
+	validateAll,
+	analyzeStatic,
+	lintAgent,
+} from '@agentkit/validator';
+
 import { loadDoc } from '../io/load';
 import { renderText } from '../reporting/text';
 import { renderJson } from '../reporting/json';
 
+import { StepRegistry as BaseRegistry } from '@agentkit/schema';
+import { loadConfig } from '../config/config';
+import { mergeRegistries, loadTrustedPluginRegistries } from '@agentkit/registry';
+
+
 
 function getBuiltInPolicy(name: string) {
-	return BUILTIN_POLICIES.find((p: any) => p.name === name) ?? BUILTIN_POLICIES[0]; // default fallback
+	return BUILTIN_POLICIES.find((p: any) => p.name === name) ?? BUILTIN_POLICIES[0];
 }
 
 export interface ValidateOptions {
@@ -16,47 +28,87 @@ export interface ValidateOptions {
 	strict?: boolean; // legacy flag to force strict policy
 }
 
-export function runValidate(
+export async function runValidate(
 	filePath: string,
 	opts: ValidateOptions
-): { exitCode: number; output: string } {
+): Promise<{ exitCode: number; output: string }> {
 	try {
 		const effectivePolicy = opts.strict ? 'strict' : (opts.policy ?? 'default');
+
 		const { doc } = loadDoc(filePath);
+
+		// -----------------------------
+		// Stage 8b: Load plugins (if any)
+		// -----------------------------
+		const projectRoot = process.cwd();
+		const cfg = loadConfig(projectRoot);
+
+		const requirePins = effectivePolicy === "ci" && (cfg.trust?.requirePinnedVersionsInCi ?? true);
+
+		const { registries: pluginRegistries } = await loadTrustedPluginRegistries({
+			plugins: cfg.plugins ?? [],
+			projectRoot,
+			trustAllow: cfg.trust?.allow,
+			trustDeny: cfg.trust?.deny,
+			requirePins
+		});
+
+		const registry = mergeRegistries(BaseRegistry as any, pluginRegistries);
+
+		// -----------------------------
+		// Structural validation first
+		// -----------------------------
 		const structural = validateStructural(doc);
 
-		// attach file to findings
 		let findings: Finding[] = structural.findings.map((f) => ({
 			...f,
 			file: filePath,
 		}));
 
-		// Only run semantic validation if structural validation succeeded
+		// Only run semantic + static + lint if structural validation succeeded
 		if (structural.ok) {
-			const semantic = validateSemantic(doc as any).map((f) => ({
+			// -----------------------------
+			// Semantic validation (registry injected)
+			// -----------------------------
+			const semantic = validateAll(doc as any, { registry, policyName: opts.policy }).map((f) => ({
 				...f,
 				file: filePath,
 			}));
 			findings = findings.concat(semantic);
+
+			// -----------------------------
+			// Static analysis
+			// -----------------------------
+			const staticFindings = analyzeStatic(doc as any).map((f) => ({
+				...f,
+				file: filePath,
+			}));
+			findings = findings.concat(staticFindings);
+
+			// -----------------------------
+			// Lint warnings
+			// -----------------------------
+			const lintFindings = lintAgent(doc as any).map((f) => ({
+				...f,
+				file: filePath,
+			}));
+			findings = findings.concat(lintFindings);
 		}
 
-		const staticFindings = analyzeStatic(doc as any).map((f) => ({ ...f, file: filePath }));
-		findings = findings.concat(staticFindings);
-
-		// Lint-style warnings
-		const lintFindings = lintAgent(doc as any).map((f) => ({ ...f, file: filePath }));
-		findings = findings.concat(lintFindings);
-
+		// -----------------------------
+		// Apply policy (single source of truth)
+		// -----------------------------
 		const policyPack = getBuiltInPolicy(effectivePolicy);
 		findings = applyPolicy(findings, policyPack);
 
+		// -----------------------------
+		// Exit logic: fail if any errors remain after policy
+		// (Strict is handled by policy escalation, not duplicated here.)
+		// -----------------------------
 		const hasErrors = findings.some((f) => f.severity === 'error');
-		const hasWarnings = findings.some((f) => f.severity === 'warning');
-		const fail = hasErrors || (effectivePolicy === 'strict' && hasWarnings);
+		const out = opts.format === 'json' ? renderJson(findings) : renderText(findings);
 
-		const out =
-			opts.format === 'json' ? renderJson(findings) : renderText(findings);
-		return { exitCode: fail ? 1 : 0, output: out };
+		return { exitCode: hasErrors ? 1 : 0, output: out };
 	} catch (e: any) {
 		const msg = e?.message || String(e);
 		const findings: Finding[] = [
@@ -68,8 +120,7 @@ export function runValidate(
 				jsonPath: '$',
 			},
 		];
-		const out =
-			opts.format === 'json' ? renderJson(findings) : renderText(findings);
+		const out = opts.format === 'json' ? renderJson(findings) : renderText(findings);
 		return { exitCode: 2, output: out };
 	}
 }

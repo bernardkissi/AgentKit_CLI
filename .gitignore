@@ -8,3 +8,4 @@ coverage
 # build artifacts
 /dist
 /packages/*/dist
+/packages/plugins/*/dist

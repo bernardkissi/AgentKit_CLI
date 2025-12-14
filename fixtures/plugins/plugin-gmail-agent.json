@@ -1,0 +1,39 @@
+{
+  "schema_version": "1.0.0",
+  "kind": "agent_definition",
+  "id": "plugin_gmail_agent",
+  "name": "Plugin Gmail Agent",
+  "template_version": "1.0.0",
+  "description": "Uses plugin gmail step",
+  "metadata": {
+    "owner": "cli-tests"
+  },
+  "trigger": {
+    "type": "manual",
+    "config": {}
+  },
+  "runtime": {
+    "connections": {
+      "gmail": {}
+    }
+  },
+  "flow": {
+    "entrypoint": "step1"
+  },
+  "steps": [
+    {
+      "id": "step1",
+      "type": "plugin.gmail.send_email",
+      "params": {
+        "connection": "gmail",
+        "to": "user@example.com",
+        "subject": "Hi",
+        "body": "Hello"
+      },
+      "flow": {
+        "end": true
+      }
+    }
+  ],
+  "error_handling": {}
+}

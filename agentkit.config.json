@@ -1,0 +1,5 @@
+{
+  "plugins": [
+    "@agentkit/plugin-gmail"
+  ]
+}

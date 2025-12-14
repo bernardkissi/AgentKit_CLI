@@ -23,101 +23,101 @@ const missingTarget = path.join(root,'fixtures/invalid/flow_target_missing.json'
 const missingConn = path.join(root, 'fixtures/invalid/connection_missing.json');
 
 describe('agentkit validate (stage 1)', () => {
-	it('passes valid fixture', () => {
-		const res = runValidate(validFile, { format: 'json', strict: false });
+	it('passes valid fixture', async () => {
+		const res = await runValidate(validFile, { format: 'json', strict: false });
 		expect(res.exitCode).toBe(0);
 		const findings = JSON.parse(res.output).findings;
 		const errors = findings.filter((f: any) => f.severity === "error");
 		expect(errors).toHaveLength(0);
 	});
 
-	it('fails invalid json', () => {
+	it('fails invalid json', async () => {
 		const tmp = path.join(root, 'fixtures/invalid/bad.json');
-		const res = runValidate(tmp, { format: 'json', strict: false });
+		const res = await runValidate(tmp, { format: 'json', strict: false });
 		expect([1, 2]).toContain(res.exitCode);
 	});
 
-	it('flags duplicate step ids', () => {
-		const res = runValidate(dupId, { format: 'json', strict: false });
+	it('flags duplicate step ids', async () => {
+		const res = await runValidate(dupId, { format: 'json', strict: false });
 		expect(res.exitCode).toBe(1);
 		const codes = JSON.parse(res.output).findings.map((f: any) => f.code);
 		expect(codes).toContain('E_STEP_ID_DUPLICATE');
 	});
 
-	it('flags missing entrypoint', () => {
-		const res = runValidate(missingEntry, { format: 'json', strict: false });
+	it('flags missing entrypoint', async () => {
+		const res = await runValidate(missingEntry, { format: 'json', strict: false });
 		expect(res.exitCode).toBe(1);
 		const codes = JSON.parse(res.output).findings.map((f: any) => f.code);
 		expect(codes).toContain('E_FLOW_ENTRYPOINT_MISSING');
 	});
 
-	it('flags missing flow target', () => {
-		const res = runValidate(missingTarget, { format: 'json', strict: false });
+	it('flags missing flow target', async () => {
+		const res = await runValidate(missingTarget, { format: 'json', strict: false });
 		expect(res.exitCode).toBe(1);
 		const codes = JSON.parse(res.output).findings.map((f: any) => f.code);
 		expect(codes).toContain('E_FLOW_TARGET_MISSING');
 	});
 
-	it('flags missing connection', () => {
-		const res = runValidate(missingConn, { format: 'json', strict: false });
+	it('flags missing connection', async () => {
+		const res = await runValidate(missingConn, { format: 'json', strict: false });
 		expect(res.exitCode).toBe(1);
 		const codes = JSON.parse(res.output).findings.map((f: any) => f.code);
 		expect(codes).toContain('E_CONNECTION_MISSING');
 	});
-	it('flags expression parse errors', () => {
-		const res = runValidate(exprParse, { format: 'json', strict: false });
+	it('flags expression parse errors', async () => {
+		const res = await runValidate(exprParse, { format: 'json', strict: false });
 		expect(res.exitCode).toBe(1);
 		const codes = JSON.parse(res.output).findings.map((f: any) => f.code);
 		expect(codes).toContain('E_EXPR_PARSE');
 	});
 
-	it('flags illegal expression namespaces', () => {
-		const res = runValidate(exprNs, { format: 'json', strict: false });
+	it('flags illegal expression namespaces', async () => {
+		const res = await runValidate(exprNs, { format: 'json', strict: false });
 		expect(res.exitCode).toBe(1);
 		const codes = JSON.parse(res.output).findings.map((f: any) => f.code);
 		expect(codes).toContain('E_EXPR_NAMESPACE');
 	});
 
-	it("flags invalid output references", () => {
-		const res = runValidate(outRef, { format: "json", strict: false });
+	it("flags invalid output references", async () => {
+		const res = await runValidate(outRef, { format: "json", strict: false });
 		expect(res.exitCode).toBe(1);
 		const codes = JSON.parse(res.output).findings.map((f: any) => f.code);
 		expect(codes).toContain("E_OUTPUT_REFERENCE_INVALID");
 	  });
 
-	  it("flags unknown step types", () => {
-		const res = runValidate(unknownType, { format: "json", strict: false });
+	  it("flags unknown step types", async () => {
+		const res = await runValidate(unknownType, { format: "json", strict: false });
 		expect(res.exitCode).toBe(1);
 		const codes = JSON.parse(res.output).findings.map((f: any) => f.code);
 		expect(codes).toContain("E_STEP_TYPE_UNKNOWN");
 	  });
 
-	  it("flags invalid step params", () => {
-		const res = runValidate(invalidParams, { format: "json", strict: false });
+	  it("flags invalid step params", async () => {
+		const res = await runValidate(invalidParams, { format: "json", strict: false });
 		expect(res.exitCode).toBe(1);
 		const codes = JSON.parse(res.output).findings.map((f: any) => f.code);
 		expect(codes).toContain("E_STEP_PARAMS_INVALID");
 	  });
 	  
-	  it("warns on unreachable step (non-strict)", () => {
-		const res = runValidate(unreachable, { format: "json", strict: false });
+	  it("warns on unreachable step (non-strict)", async () => {
+		const res = await runValidate(unreachable, { format: "json", strict: false });
 		expect(res.exitCode).toBe(0);
 		const codes = JSON.parse(res.output).findings.map((f: any) => f.code);
 		expect(codes).toContain("W_UNREACHABLE_STEP");
 	  });
 	  
-	  it("fails on unreachable step in strict mode", () => {
-		const res = runValidate(unreachable, { format: "json", strict: true });
+	  it("fails on unreachable step in strict mode", async () => {
+		const res = await runValidate(unreachable, { format: "json", strict: true });
 		expect(res.exitCode).toBe(1);
 	  });
 
-	  it("fails warnings fixture in strict mode", () => {
-		const res = runValidate(lintWarnings, { format: "json", policy: "strict" });
+	  it("fails warnings fixture in strict mode", async () => {
+		const res = await runValidate(lintWarnings, { format: "json", policy: "strict" });
 		expect(res.exitCode).toBe(1);
 	  });
 	  
-	  it("flags cycles", () => {
-		const res = runValidate(cycle, { format: "json", strict: false });
+	  it("flags cycles", async () => {
+		const res = await runValidate(cycle, { format: "json", strict: false });
 		expect(res.exitCode).toBe(1);
 		const codes = JSON.parse(res.output).findings.map((f: any) => f.code);
 		expect(codes).toContain("E_CYCLE_DETECTED");

@@ -1,8 +1,8 @@
-import type { AgentDefinition } from '@agentkit/schema';
+import type { AgentDefinition, StepTypeDef } from '@agentkit/schema';
 import { extractExpressions, parseExpression, validateNamespace } from "@agentkit/expressions";
 import { extractOutputRefs } from "./references/output-references";
 import type { Finding } from './types';
-import { StepRegistry } from "@agentkit/schema";
+import { StepRegistry as BaseStepRegistry } from "@agentkit/schema";
 
 function isNonEmptyString(x: unknown): x is string {
 	return typeof x === 'string' && x.trim().length > 0;
@@ -49,8 +49,15 @@ function collectFlowTargets(
 
 
 
-export function validateSemantic(doc: AgentDefinition): Finding[] {
+type StepRegistry = Record<string, StepTypeDef>;
+
+export interface ValidateSemanticOptions {
+	registry?: StepRegistry;
+}
+
+export function validateSemantic(doc: AgentDefinition, opts?: ValidateSemanticOptions): Finding[] {
 	const findings: Finding[] = [];
+	const registry = opts?.registry ?? (BaseStepRegistry as StepRegistry);
 
 	// E_STEP_ID_DUPLICATE
 	const seen = new Set<string>();
@@ -115,8 +122,8 @@ export function validateSemantic(doc: AgentDefinition): Finding[] {
 	}
 
 	// E_STEP_TYPE_UNKNOWN / E_STEP_PARAMS_INVALID
-	for (const step of doc.steps as any[]) {
-		const def = (StepRegistry as any)[step.type];
+		for (const step of doc.steps as any[]) {
+			const def = (registry as any)[step.type];
 		if (!def) {
 			findings.push({
 				code: "E_STEP_TYPE_UNKNOWN",

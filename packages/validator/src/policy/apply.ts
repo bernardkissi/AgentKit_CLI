@@ -9,7 +9,9 @@ export function applyPolicy(findings: Finding[], policy: PolicyPack): Finding[] 
         const enabled = policy.enabled?.[f.code];
         if (enabled === false) continue;
 
-        const sev = policy.severityOverrides?.[f.code] ?? f.severity ?? meta?.defaultSeverity ?? "error";
+        const baseSeverity = f.severity ?? meta?.defaultSeverity ?? "error";
+        const elevated = (policy.name === "strict" || policy.name === "ci") && baseSeverity === "warning";
+        const sev = policy.severityOverrides?.[f.code] ?? (elevated ? "error" : baseSeverity);
         out.push({ ...f, severity: sev });
     }
     return out;

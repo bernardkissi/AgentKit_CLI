@@ -1,13 +1,12 @@
 {
   "schema_version": "1.0.0",
   "kind": "agent_definition",
-  "id": "example_agent",
-  "description": "Example agent",
-  "name": "Example",
+  "id": "plugin_agent",
+  "name": "Plugin Agent",
+  "description": "Uses plugin step type",
   "template_version": "1.0.0",
   "metadata": {
-    "owner": "bernardkissi",
-    "version": "1.0.0"
+    "owner": "cli-tests"
   },
   "trigger": {
     "type": "manual",
@@ -19,16 +18,14 @@
   "steps": [
     {
       "id": "step1",
-      "type": "llm.prompt",
+      "type": "plugin.echo",
       "params": {
-        "user_prompt": "Hello"
+        "message": "hi"
       },
       "flow": {
         "end": true
       }
     }
   ],
-  "error_handling": {
-    "type": "manual"
-  }
+  "error_handling": {}
 }

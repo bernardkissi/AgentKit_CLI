@@ -151,6 +151,54 @@ export const RULES: Record<string, RuleMeta> = {
         description: "Step params do not match the expected schema.",
         hint: "Fix the params to match the expected schema.",
         rfc: "RFC-0014"
+    },
+    E_PLUGIN_NOT_FOUND: {
+        code: "E_PLUGIN_NOT_FOUND",
+        defaultSeverity: "error",
+        title: "Plugin not found",
+        description: "Plugin is not registered.",
+        hint: "Add the plugin to the registry or fix the plugin name.",
+        rfc: "RFC-0014"
+    },
+    E_PLUGIN_UNTRUSTED: {
+        code: "E_PLUGIN_UNTRUSTED",
+        defaultSeverity: "error",
+        title: "Plugin untrusted",
+        description: "Plugin is not trusted.",
+        hint: "Add the plugin to the registry or fix the plugin name.",
+        rfc: "RFC-0014"
+    },
+    E_PLUGIN_VERSION_UNPINNED: {
+        code: "E_PLUGIN_VERSION_UNPINNED",
+        defaultSeverity: "error",
+        title: "Plugin version unpinned",
+        description: "Plugin version is not pinned.",
+        hint: "Add the plugin to the registry or fix the plugin name.",
+        rfc: "RFC-0014"
+    },
+    E_PLUGIN_LOAD_FAILED: {
+        code: "E_PLUGIN_LOAD_FAILED",
+        defaultSeverity: "error",
+        title: "Plugin load failed",
+        description: "Plugin load failed.",
+        hint: "Add the plugin to the registry or fix the plugin name.",
+        rfc: "RFC-0014"
+    },
+    E_BUNDLE_SIGNATURE_INVALID: {
+        code: "E_BUNDLE_SIGNATURE_INVALID",
+        defaultSeverity: "error",
+        title: "Bundle signature invalid",
+        description: "manifest.json signature failed verification.",
+        hint: "Recreate the bundle or ensure the correct public key is present.",
+        rfc: "RFC-0015"
+    },
+    E_BUNDLE_HASH_MISMATCH: {
+        code: "E_BUNDLE_HASH_MISMATCH",
+        defaultSeverity: "error",
+        title: "Bundle hash mismatch",
+        description: "Bundle contents hash does not match manifest declaration.",
+        hint: "Recreate the bundle to refresh hashes and signatures.",
+        rfc: "RFC-0015"
     }
 };
 

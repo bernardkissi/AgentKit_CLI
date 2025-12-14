@@ -3,7 +3,8 @@
   "private": true,
   "version": "0.1.0",
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "packages/plugins/*"
   ],
   "scripts": {
     "build": "pnpm -r build",
@@ -17,6 +18,7 @@
     "deps:check": "pnpm audit --audit-level=high"
   },
   "devDependencies": {
+    "@agentkit/plugin-gmail": "workspace:*",
     "@changesets/cli": "^2.29.8",
     "@typescript-eslint/eslint-plugin": "^8.49.0",
     "@typescript-eslint/parser": "^8.49.0",

@@ -25,8 +25,9 @@ export function runLint(filePath: string, opts: LintOptions): { exitCode: number
         const policyPack = getBuiltInPolicy(effectivePolicy);
         findings = applyPolicy(findings, policyPack);
         //  exit code logic
+        const hasErrors = findings.some(f => f.severity === "error");
         const hasWarnings = findings.some(f => f.severity === "warning");
-        const fail = effectivePolicy === "strict" && hasWarnings;
+        const fail = hasErrors || (effectivePolicy === "strict" && hasWarnings);
         const out = opts.format === "json" ? renderJson(findings) : renderText(findings);
         return { exitCode: fail ? 1 : 0, output: out };
     } catch (e: any) {
