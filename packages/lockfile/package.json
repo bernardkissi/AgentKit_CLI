@@ -1,5 +1,5 @@
 {
-  "name": "@agentkit/registry",
+  "name": "@agentkit/lockfile",
   "version": "0.1.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -12,8 +12,7 @@
     "test": "echo \"(no tests)\""
   },
   "dependencies": {
-    "@agentkit/schema": "workspace:*",
-    "@agentkit/lockfile": "workspace:*"
+    "yaml": "^2.8.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

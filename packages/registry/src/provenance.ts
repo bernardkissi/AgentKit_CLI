@@ -7,4 +7,5 @@ export interface PluginProvenance {
     name?: string;       // npm package name
     version?: string;    // resolved version
     path?: string;       // resolved absolute path
+    integrity?: string;  // lockfile integrity if available
 }

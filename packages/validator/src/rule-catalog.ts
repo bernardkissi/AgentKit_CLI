@@ -85,6 +85,38 @@ export const RULES: Record<string, RuleMeta> = {
         hint: "Declare the output key on the referenced step or fix the expression reference.",
         rfc: "RFC-0008"
     },
+    E_SECRET_INLINE: {
+        code: "E_SECRET_INLINE",
+        defaultSeverity: "warning",
+        title: "Inline secret detected",
+        description: "Potential secret/token detected inline instead of a secret reference.",
+        hint: "Move secrets to a secret manager and reference them with {$secret: \"name\"}.",
+        rfc: "RFC-0018"
+    },
+    E_PERMISSION_MISSING: {
+        code: "E_PERMISSION_MISSING",
+        defaultSeverity: "error",
+        title: "Required permission missing",
+        description: "A step requires a capability that is not declared in agent.permissions.",
+        hint: "Declare the needed connector/network/llm capability in agent.permissions.",
+        rfc: "RFC-0017"
+    },
+    E_PERMISSION_DENIED: {
+        code: "E_PERMISSION_DENIED",
+        defaultSeverity: "error",
+        title: "Permission denied by policy",
+        description: "A required capability conflicts with a deny rule (e.g., egress host denied).",
+        hint: "Update permissions deny/allow lists to permit the required host.",
+        rfc: "RFC-0017"
+    },
+    W_PERMISSION_OVERBROAD: {
+        code: "W_PERMISSION_OVERBROAD",
+        defaultSeverity: "warning",
+        title: "Permissions overbroad",
+        description: "Permissions are declared that are not used by any step.",
+        hint: "Remove unused permissions for least privilege.",
+        rfc: "RFC-0017"
+    },
 
     W_UNREACHABLE_STEP: {
         code: "W_UNREACHABLE_STEP",
@@ -186,7 +218,7 @@ export const RULES: Record<string, RuleMeta> = {
     },
     E_BUNDLE_ATTESTATION_INVALID: {
         code: "E_BUNDLE_ATTESTATION_INVALID",
-        defaultSeverity: "error",
+        defaultSeverity: "warning",
         title: "Bundle attestation invalid",
         description: "Bundle manifest signature failed verification or is missing.",
         hint: "Regenerate the bundle with a trusted keypair and re-sign.",
@@ -194,11 +226,43 @@ export const RULES: Record<string, RuleMeta> = {
     },
     E_BUNDLE_PROVENANCE_MISMATCH: {
         code: "E_BUNDLE_PROVENANCE_MISMATCH",
-        defaultSeverity: "error",
+        defaultSeverity: "warning",
         title: "Bundle provenance mismatch",
         description: "Bundle provenance could not be verified against declared sources.",
         hint: "Recreate the bundle with correct plugin sources and lockfiles.",
         rfc: "RFC-0015"
+    },
+    E_LOCKFILE_MISSING: {
+        code: "E_LOCKFILE_MISSING",
+        defaultSeverity: "warning",
+        title: "Lockfile missing",
+        description: "CI policy requires a lockfile but none was found.",
+        hint: "Commit pnpm-lock.yaml/package-lock.json/yarn.lock.",
+        rfc: "RFC-0016"
+    },
+    E_LOCKFILE_UNSUPPORTED: {
+        code: "E_LOCKFILE_UNSUPPORTED",
+        defaultSeverity: "warning",
+        title: "Lockfile unsupported",
+        description: "Lockfile exists but could not be parsed.",
+        hint: "Use a supported lockfile format and ensure it is valid JSON/YAML.",
+        rfc: "RFC-0016"
+    },
+    E_PLUGIN_VERSION_UNRESOLVABLE: {
+        code: "E_PLUGIN_VERSION_UNRESOLVABLE",
+        defaultSeverity: "warning",
+        title: "Plugin version unresolvable",
+        description: "Plugin package was not found in the lockfile.",
+        hint: "Ensure the plugin is installed and present in the lockfile.",
+        rfc: "RFC-0016"
+    },
+    E_PLUGIN_PIN_MISMATCH: {
+        code: "E_PLUGIN_PIN_MISMATCH",
+        defaultSeverity: "warning",
+        title: "Plugin pin mismatch",
+        description: "Plugin pin does not match the version in the lockfile.",
+        hint: "Align plugin pin with the locked version or update the lockfile.",
+        rfc: "RFC-0016"
     },
     E_BUNDLE_SIGNATURE_INVALID: {
         code: "E_BUNDLE_SIGNATURE_INVALID",

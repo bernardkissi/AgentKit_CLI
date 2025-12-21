@@ -8,6 +8,9 @@ importers:
 
   .:
     devDependencies:
+      '@agentkit/lockfile':
+        specifier: workspace:*
+        version: link:packages/lockfile
       '@agentkit/plugin-gmail':
         specifier: workspace:*
         version: link:packages/plugins/plugin-gmail
@@ -75,6 +78,19 @@ importers:
       vitest:
         specifier: ^2.1.8
         version: 2.1.9(@types/node@22.19.2)
+
+  packages/lockfile:
+    dependencies:
+      yaml:
+        specifier: ^2.8.0
+        version: 2.8.2
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.2
+        version: 22.19.2
+      typescript:
+        specifier: ^5.6.3
+        version: 5.9.3
 
   packages/plugins/plugin-gmail:
     dependencies:

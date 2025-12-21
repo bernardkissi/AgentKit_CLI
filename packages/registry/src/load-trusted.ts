@@ -2,6 +2,8 @@ import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import type { StepRegistry, AgentKitPluginModule } from "./types";
 import type { PluginProvenance } from "./provenance";
+import type { LockfileInfo } from "@agentkit/lockfile";
+import { resolvePackageVersion } from "@agentkit/lockfile";
 
 export type PluginSpec =
     | string
@@ -45,7 +47,7 @@ async function importNpm(name: string) {
  * NOTE: Version resolution is best-effort in Stage 9.
  * For full correctness, Stage 10 can parse lockfile(s).
  */
-async function resolvePackageVersion(pkgName: string): Promise<string | undefined> {
+async function resolvePackageVersionFallback(pkgName: string): Promise<string | undefined> {
     try {
         const mod = require(`${pkgName}/package.json`);
         return mod?.version;
@@ -60,6 +62,8 @@ export async function loadTrustedPluginRegistries(args: {
     trustAllow?: string[];
     trustDeny?: string[];
     requirePins?: boolean;
+    lockfile?: LockfileInfo;
+    policyName?: string;
 }): Promise<{ registries: StepRegistry[]; provenance: PluginProvenance[] }> {
 
     const registries: StepRegistry[] = [];
@@ -67,6 +71,7 @@ export async function loadTrustedPluginRegistries(args: {
 
     const deny = new Set(args.trustDeny ?? []);
     const allow = args.trustAllow ? new Set(args.trustAllow) : null;
+    const requireLock = args.policyName === "ci";
 
     for (const s of args.plugins ?? []) {
         const n = normalize(s);
@@ -76,22 +81,39 @@ export async function loadTrustedPluginRegistries(args: {
             if (allow && !allow.has(n.name)) throw new Error(`E_PLUGIN_UNTRUSTED: '${n.name}' not in allowlist`);
             if (args.requirePins && !n.pin) throw new Error(`E_PLUGIN_VERSION_UNPINNED: '${n.name}' missing pin`);
 
+            if (requireLock && !args.lockfile) {
+                throw new Error("E_LOCKFILE_MISSING: lockfile required for CI policy");
+            }
+
+            let resolvedPkg;
+            if (args.lockfile) {
+                resolvedPkg = resolvePackageVersion(args.lockfile, n.name);
+                if (!resolvedPkg) {
+                    throw new Error(`E_PLUGIN_VERSION_UNRESOLVABLE: '${n.name}' not found in lockfile`);
+                }
+                if (n.pin && resolvedPkg.version !== n.pin) {
+                    throw new Error(`E_PLUGIN_PIN_MISMATCH: '${n.name}' pin ${n.pin} !== lockfile ${resolvedPkg.version}`);
+                }
+            } else {
+                const version = await resolvePackageVersionFallback(n.name);
+                if (n.pin && version && version !== n.pin) {
+                    throw new Error(`E_PLUGIN_PIN_MISMATCH: '${n.name}' pin ${n.pin} !== resolved ${version}`);
+                }
+                resolvedPkg = version ? { name: n.name, version } : null;
+            }
+
             const mod = (await importNpm(n.name)) as AgentKitPluginModule;
             const reg = mod.agentkitRegistry ?? mod.default;
             if (!reg || typeof reg !== "object") throw new Error(`E_PLUGIN_LOAD_FAILED: '${n.name}' invalid exports`);
-
-            const version = await resolvePackageVersion(n.name);
-            if (n.pin && version && version !== n.pin) {
-                throw new Error(`E_PLUGIN_VERSION_UNPINNED: '${n.name}' resolved version ${version} does not match pin ${n.pin}`);
-            }
 
             registries.push(reg as StepRegistry);
             provenance.push({
                 source: "npm",
                 spec: n.raw,
-                resolved: `${n.name}@${version ?? "unknown"}`,
+                resolved: `${n.name}@${resolvedPkg?.version ?? "unknown"}`,
                 name: n.name,
-                version
+                version: resolvedPkg?.version,
+                integrity: resolvedPkg?.integrity
             });
         } else {
             const abs = n.path.startsWith("file:") ? n.path : path.resolve(args.projectRoot, n.path);

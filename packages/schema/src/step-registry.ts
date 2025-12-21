@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { SecretRef } from "./agent-definition.zod";
 
 export interface StepTypeDef {
     type: string;
@@ -6,6 +7,12 @@ export interface StepTypeDef {
     description?: string;
     paramsSchema: z.ZodTypeAny;
     outputsSchema?: z.ZodTypeAny;
+    requiredCapabilities?: Array<{
+        kind: "network" | "connector" | "llm";
+        name: string;
+        scope?: string;
+        detail?: any;
+    }>;
 }
 
 export const StepRegistry: Record<string, StepTypeDef> = {
@@ -14,7 +21,8 @@ export const StepRegistry: Record<string, StepTypeDef> = {
         title: "LLM Prompt",
         paramsSchema: z.object({
             user_prompt: z.string().min(1),
-            model: z.string().optional()
+            model: z.string().optional(),
+            api_key: SecretRef.optional()
         }).strict(),
         outputsSchema: z.object({
             text: z.string()
@@ -31,5 +39,9 @@ export const StepRegistry: Record<string, StepTypeDef> = {
             body: z.string().min(1),
             idempotency_key: z.string().optional()
         }).strict()
+        ,
+        requiredCapabilities: [
+            { kind: "connector", name: "gmail", scope: "send_email" }
+        ]
     }
 };

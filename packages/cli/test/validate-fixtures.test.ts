@@ -17,6 +17,10 @@ const cycle = path.join(root, "fixtures/invalid/cycle_detected.json");
 const unknownType = path.join(root, "fixtures/invalid/unknown_step_type.json");
 const invalidParams = path.join(root, "fixtures/invalid/invalid_step_params.json");
 const lintWarnings = path.join(root, "fixtures/warnings/lint_warnings.json");
+const permissionMissing = path.join(root, "fixtures/invalid/permission_missing.json");
+const permissionOverbroad = path.join(root, "fixtures/warnings/permissions_overbroad.json");
+const secretInline = path.join(root, "fixtures/invalid/secret_inline.json");
+const secretRef = path.join(root, "fixtures/valid/secret_reference.json");
 // invalid fixtures
 const missingEntry = path.join(root, 'fixtures/invalid/entrypoint_missing.json');
 const missingTarget = path.join(root,'fixtures/invalid/flow_target_missing.json');
@@ -97,6 +101,34 @@ describe('agentkit validate (stage 1)', () => {
 		expect(res.exitCode).toBe(1);
 		const codes = JSON.parse(res.output).findings.map((f: any) => f.code);
 		expect(codes).toContain("E_STEP_PARAMS_INVALID");
+	  });
+
+	  it("flags missing permissions for required capability", async () => {
+		const res = await runValidate(permissionMissing, { format: "json", strict: false });
+		expect(res.exitCode).toBe(1);
+		const codes = JSON.parse(res.output).findings.map((f: any) => f.code);
+		expect(codes).toContain("E_PERMISSION_MISSING");
+	  });
+	  
+	  it("warns on overbroad permissions", async () => {
+		const res = await runValidate(permissionOverbroad, { format: "json", strict: false });
+		expect(res.exitCode).toBe(0);
+		const codes = JSON.parse(res.output).findings.map((f: any) => f.code);
+		expect(codes).toContain("W_PERMISSION_OVERBROAD");
+	  });
+
+	  it("flags inline secrets", async () => {
+		const res = await runValidate(secretInline, { format: "json", strict: false });
+		expect(res.exitCode).toBe(1);
+		const codes = JSON.parse(res.output).findings.map((f: any) => f.code);
+		expect(codes).toContain("E_SECRET_INLINE");
+	  });
+
+	  it("allows secret references", async () => {
+		const res = await runValidate(secretRef, { format: "json", strict: false });
+		expect(res.exitCode).toBe(0);
+		const codes = JSON.parse(res.output).findings.map((f: any) => f.code);
+		expect(codes).not.toContain("E_SECRET_INLINE");
 	  });
 	  
 	  it("warns on unreachable step (non-strict)", async () => {

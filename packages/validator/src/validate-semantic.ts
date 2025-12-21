@@ -3,9 +3,26 @@ import { extractExpressions, parseExpression, validateNamespace } from "@agentki
 import { extractOutputRefs } from "./references/output-references";
 import type { Finding } from './types';
 import { StepRegistry as BaseStepRegistry } from "@agentkit/schema";
+import { URL } from "node:url";
 
 function isNonEmptyString(x: unknown): x is string {
 	return typeof x === 'string' && x.trim().length > 0;
+}
+
+function wildcardMatch(pattern: string, value: string): boolean {
+	const escaped = pattern.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/\\\*/g, ".*");
+	const re = new RegExp(`^${escaped}$`, "i");
+	return re.test(value);
+}
+
+function extractHostname(value: string): string | null {
+	try {
+		return new URL(value).hostname.toLowerCase();
+	} catch {
+		// If it's already a bare host, return it
+		if (value && !value.includes("://")) return value.toLowerCase();
+		return null;
+	}
 }
 
 function collectFlowTargets(
@@ -58,6 +75,17 @@ export interface ValidateSemanticOptions {
 export function validateSemantic(doc: AgentDefinition, opts?: ValidateSemanticOptions): Finding[] {
 	const findings: Finding[] = [];
 	const registry = opts?.registry ?? (BaseStepRegistry as StepRegistry);
+	const requiredCaps: Array<{
+		kind: "network" | "connector" | "llm";
+		name: string;
+		scope?: string;
+		detail?: any;
+		stepId: string;
+		stepType: string;
+		jsonPath: string;
+		host?: string;
+		model?: string;
+	}> = [];
 
 	// E_STEP_ID_DUPLICATE
 	const seen = new Set<string>();
@@ -123,7 +151,7 @@ export function validateSemantic(doc: AgentDefinition, opts?: ValidateSemanticOp
 
 	// E_STEP_TYPE_UNKNOWN / E_STEP_PARAMS_INVALID
 		for (const step of doc.steps as any[]) {
-			const def = (registry as any)[step.type];
+		const def = (registry as any)[step.type];
 		if (!def) {
 			findings.push({
 				code: "E_STEP_TYPE_UNKNOWN",
@@ -143,6 +171,28 @@ export function validateSemantic(doc: AgentDefinition, opts?: ValidateSemanticOp
 					parsed.error.issues.map((i: any) => `${i.path.join(".") || "$"}: ${i.message}`).join("; "),
 				jsonPath: `$.steps[?(@.id=="${step.id}")].params`
 			});
+		}
+
+		for (const cap of def.requiredCapabilities ?? []) {
+			const req = {
+				kind: cap.kind,
+				name: cap.name,
+				scope: cap.scope,
+				detail: cap.detail,
+				stepId: step.id,
+				stepType: step.type,
+				jsonPath: `$.steps[?(@.id=="${step.id}")]`,
+				host: undefined as string | undefined,
+				model: undefined as string | undefined
+			};
+
+			if (cap.kind === "network" && cap.detail?.hostFromParam && typeof step.params?.[cap.detail.hostFromParam] === "string") {
+				req.host = extractHostname(step.params[cap.detail.hostFromParam]) ?? undefined;
+			}
+			if (cap.kind === "llm" && cap.detail?.modelFromParam && typeof step.params?.[cap.detail.modelFromParam] === "string") {
+				req.model = step.params[cap.detail.modelFromParam];
+			}
+			requiredCaps.push(req);
 		}
 	}
 
@@ -190,6 +240,181 @@ export function validateSemantic(doc: AgentDefinition, opts?: ValidateSemanticOp
 					severity: "error",
 					message: `Expression references steps.${r.stepId}.outputs.${r.key}, but step '${r.stepId}' does not declare output '${r.key}'.`,
 					jsonPath: occ.jsonPath
+				});
+			}
+		}
+	}
+
+	// Secret leakage detection
+	function traverseForSecrets(node: any, path: string) {
+		if (node && typeof node === "object" && !Array.isArray(node)) {
+			// Skip pure secret refs
+			if (Object.keys(node).length === 1 && typeof node.$secret === "string") {
+				return;
+			}
+			for (const [k, v] of Object.entries(node)) {
+				const childPath = `${path}.${k}`;
+				traverseForSecrets(v, childPath);
+				if (typeof v === "string") {
+					const keySuspicious = /api[-_]?key|token|secret|password/i.test(k);
+					const looksSecret =
+						/^sk-[A-Za-z0-9]{16,}/.test(v) ||
+						(/[A-Za-z]/.test(v) && /\d/.test(v) && v.length >= 32);
+					const templated = v.includes("{{");
+					if ((keySuspicious || looksSecret) && !templated) {
+						findings.push({
+							code: "E_SECRET_INLINE",
+							severity: "warning",
+							message: `Potential inline secret at ${childPath}`,
+							jsonPath: childPath.replace(/^\$\./, "$.")
+						});
+					}
+				}
+			}
+		} else if (Array.isArray(node)) {
+			node.forEach((item, idx) => traverseForSecrets(item, `${path}[${idx}]`));
+		}
+	}
+
+	traverseForSecrets(doc, "$");
+
+	// Permission coverage checks
+	const permissions: any = (doc as any).permissions ?? {};
+	const connectorDecls = new Map<string, Set<string>>();
+	for (const c of permissions.connectors ?? []) {
+		if (!c?.name || !Array.isArray(c.scopes)) continue;
+		connectorDecls.set(c.name, new Set(c.scopes));
+	}
+	const egressAllow: string[] = permissions.network?.egress?.allow ?? [];
+	const egressDeny: string[] = permissions.network?.egress?.deny ?? [];
+	const hasEgress = Boolean(permissions.network?.egress);
+	const allowedModels: string[] = permissions.llm?.allowedModels ?? [];
+
+	const usedConnectorScopes = new Set<string>();
+	const usedAllowPatterns = new Set<string>();
+	const usedModels = new Set<string>();
+
+	for (const cap of requiredCaps) {
+		if (cap.kind === "connector") {
+			const scopes = connectorDecls.get(cap.name);
+			if (!scopes) {
+				findings.push({
+					code: "E_PERMISSION_MISSING",
+					severity: "error",
+					message: `Step '${cap.stepId}' requires connector '${cap.name}'${cap.scope ? ` (${cap.scope})` : ""} but it is not declared in permissions.connectors.`,
+					jsonPath: cap.jsonPath
+				});
+				continue;
+			}
+			if (cap.scope && !scopes.has(cap.scope)) {
+				findings.push({
+					code: "E_PERMISSION_MISSING",
+					severity: "error",
+					message: `Step '${cap.stepId}' requires connector '${cap.name}' scope '${cap.scope}' but permissions declare different scopes.`,
+					jsonPath: cap.jsonPath
+				});
+				continue;
+			}
+			usedConnectorScopes.add(`${cap.name}:${cap.scope ?? ""}`);
+		}
+
+		if (cap.kind === "network") {
+			if (!hasEgress) {
+				findings.push({
+					code: "E_PERMISSION_MISSING",
+					severity: "error",
+					message: `Step '${cap.stepId}' requires network egress but permissions.network.egress is not declared.`,
+					jsonPath: cap.jsonPath
+				});
+				continue;
+			}
+
+			if (cap.host) {
+				if (egressDeny.some((p) => wildcardMatch(p, cap.host!))) {
+					findings.push({
+						code: "E_PERMISSION_DENIED",
+						severity: "error",
+						message: `Egress host '${cap.host}' required by step '${cap.stepId}' is denied by permissions.network.egress.deny.`,
+						jsonPath: cap.jsonPath
+					});
+					continue;
+				}
+
+				if (egressAllow.length) {
+					const match = egressAllow.find((p) => wildcardMatch(p, cap.host!));
+					if (!match) {
+						findings.push({
+							code: "E_PERMISSION_MISSING",
+							severity: "error",
+							message: `Egress host '${cap.host}' required by step '${cap.stepId}' is not allowed by permissions.network.egress.allow.`,
+							jsonPath: cap.jsonPath
+						});
+					} else {
+						usedAllowPatterns.add(match);
+					}
+				}
+			}
+		}
+
+		if (cap.kind === "llm") {
+			if (!permissions.llm) {
+				findings.push({
+					code: "E_PERMISSION_MISSING",
+					severity: "error",
+					message: `Step '${cap.stepId}' requires LLM access but permissions.llm is not declared.`,
+					jsonPath: cap.jsonPath
+				});
+				continue;
+			}
+
+			if (cap.model && Array.isArray(allowedModels) && allowedModels.length > 0) {
+				if (!allowedModels.includes(cap.model)) {
+					findings.push({
+						code: "E_PERMISSION_MISSING",
+						severity: "error",
+						message: `Model '${cap.model}' used by step '${cap.stepId}' is not allowed by permissions.llm.allowedModels.`,
+						jsonPath: cap.jsonPath
+					});
+				} else {
+					usedModels.add(cap.model);
+				}
+			}
+		}
+	}
+
+	// Overbroad declarations (not used by any required capability)
+	for (const [name, scopes] of connectorDecls) {
+		for (const scope of scopes) {
+			if (!usedConnectorScopes.has(`${name}:${scope}`)) {
+				findings.push({
+					code: "W_PERMISSION_OVERBROAD",
+					severity: "warning",
+					message: `Connector permission '${name}' scope '${scope}' is declared but not used by any step.`,
+					jsonPath: "$.permissions.connectors"
+				});
+			}
+		}
+	}
+
+	for (const allow of egressAllow) {
+		if (!usedAllowPatterns.has(allow)) {
+			findings.push({
+				code: "W_PERMISSION_OVERBROAD",
+				severity: "warning",
+				message: `Egress allow entry '${allow}' is declared but not used by any step.`,
+				jsonPath: "$.permissions.network.egress.allow"
+			});
+		}
+	}
+
+	if (Array.isArray(allowedModels) && allowedModels.length > 0) {
+		for (const m of allowedModels) {
+			if (!usedModels.has(m)) {
+				findings.push({
+					code: "W_PERMISSION_OVERBROAD",
+					severity: "warning",
+					message: `LLM model '${m}' is allowed but not used by any step.`,
+					jsonPath: "$.permissions.llm.allowedModels"
 				});
 			}
 		}

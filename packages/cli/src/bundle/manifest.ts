@@ -13,7 +13,13 @@ export interface BundleManifest {
             name?: string;
             version?: string;
             path?: string;
+            integrity?: string;
             spec: string;
         }>;
+    };
+    lockfile?: {
+        kind: "pnpm" | "npm" | "yarn";
+        path: string;     // relative path from project root
+        sha256: string;   // sha256 hex of lockfile content
     };
 }

@@ -30,7 +30,8 @@ program
   });
 
 program
-  .command("fmt")
+  .command("format")
+  .description("Format agent definition files")
   .argument("<file>", "Agent definition file (.json|.yaml|.yml)")
   .option("--stdout", "Write formatted output to stdout", false)
   .action((file: string, options: any) => {
@@ -40,12 +41,16 @@ program
   });
 
 program
-  .command("gen")
+  .command("generate")
   .description("Generate artifacts")
   .command("schema")
   .option("--out <dir>", "Output directory", "dist")
-  .action((options: any) => {
-    const { exitCode, output } = runGenSchema({ outDir: options.out });
+  .option("--project <dir>", "Project directory", process.cwd())
+  .action(async (options: any) => {
+    const { exitCode, output } = await runGenSchema({
+      outDir: options.out,
+      projectDir: options.project,
+    });
     if (output) process.stdout.write(output);
     process.exit(exitCode);
   });
@@ -66,6 +71,7 @@ program
 
 program
   .command("rules")
+  .description("Show validation rules")
   .option("--code <code>", "Show details for a single rule code")
   .action((options: any) => {
     const { exitCode, output } = runRules({ code: options.code });
@@ -77,6 +83,7 @@ const bundle = program.command("bundle").description("Signed bundle operations")
 
 bundle
   .command("pack")
+  .description("Pack agent definition into .agentkit bundle")
   .argument("<agentfile>", "Agent definition file (.json|.yaml|.yml)")
   .option("--out <file>", "Output .agentkit bundle path", "agent.bundle.agentkit")
   .action(async (agentfile: string, options: any) => {
@@ -87,6 +94,7 @@ bundle
 
 bundle
   .command("verify")
+  .description("Verify .agentkit bundle")
   .argument("<bundle>", "Path to .agentkit bundle")
   .action(async (bundlePath: string) => {
     const { exitCode, output } = await runBundleVerify(bundlePath);
@@ -96,6 +104,7 @@ bundle
 
 program
   .command("admit")
+  .description("Admit agent definition files")
   .argument("<input>", "Agent definition file or .agentkit bundle")
   .option("--policy <policy>", "Validation policy: runtime|ci|default", "runtime")
   .action(async (input: string, options: any) => {

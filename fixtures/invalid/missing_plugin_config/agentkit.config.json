@@ -1,6 +1,6 @@
 {
   "plugins": [
-   { "name": "@agentkit/plugin-gmail", "pin": "0.1.0" }
+    "@acme/agentkit-plugin-missing"
   ],
   "trust": {
     "requirePinnedVersionsInCi": true

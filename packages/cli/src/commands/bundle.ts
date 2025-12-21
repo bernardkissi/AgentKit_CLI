@@ -7,6 +7,9 @@ import type { BundleManifest } from "../bundle/manifest";
 import { sign, verify } from "../bundle/crypto";
 import { loadConfig } from "../config/config";
 import { loadTrustedPluginRegistries } from "@agentkit/registry";
+import { detectLockfile, resolvePackageVersion } from "@agentkit/lockfile";
+import type { LockfileInfo } from "@agentkit/lockfile";
+import { runValidate } from "./validate";
 
 export interface VerifiedBundle {
     manifest: BundleManifest;
@@ -59,6 +62,23 @@ export async function runBundlePack(agentPath: string, outFile: string): Promise
     try {
         const projectRoot = process.cwd();
         const cfg = loadConfig(projectRoot);
+        const lock: LockfileInfo | null = detectLockfile(projectRoot);
+
+        const validation = await runValidate(agentPath, { format: "json", policy: "ci" });
+        if (validation.exitCode !== 0) {
+            const codes = (() => {
+                try {
+                    const parsed = JSON.parse(validation.output ?? "{}");
+                    return parsed.findings?.map((f: any) => f.code) ?? [];
+                } catch {
+                    return [];
+                }
+            })();
+            if (codes.includes("E_SECRET_INLINE")) {
+                throw new Error("E_SECRET_INLINE: Inline secrets detected. Move secrets to a secret manager and reference with {$secret:\"name\"}.");
+            }
+            throw new Error(`Validation failed before bundling:\n${validation.output ?? ""}`);
+        }
 
         const fmt = runFmt(agentPath, { stdout: true });
         if (fmt.exitCode !== 0 || !fmt.output) {
@@ -73,8 +93,25 @@ export async function runBundlePack(agentPath: string, outFile: string): Promise
             projectRoot,
             trustAllow: cfg.trust?.allow,
             trustDeny: cfg.trust?.deny,
-            requirePins: false
+            requirePins: false,
+            lockfile: lock ?? undefined,
+            policyName: undefined
         });
+
+        const resolvedPlugins = [...provenance].map((p) => {
+            if ((!p.version || !p.integrity) && lock && p.name) {
+                const resolved = resolvePackageVersion(lock, p.name);
+                if (resolved) {
+                    return {
+                        ...p,
+                        version: p.version ?? resolved.version,
+                        integrity: p.integrity ?? resolved.integrity
+                    };
+                }
+            }
+            return p;
+        });
+        resolvedPlugins.sort((a, b) => (a.resolved || "").localeCompare(b.resolved || ""));
 
         const manifest: BundleManifest = {
             format_version: "1.0",
@@ -83,7 +120,14 @@ export async function runBundlePack(agentPath: string, outFile: string): Promise
             sha256: {
                 agent: sha256(agentBuf)
             },
-            plugins: provenance.length ? { resolved: provenance } : undefined
+            plugins: resolvedPlugins.length ? { resolved: resolvedPlugins } : undefined,
+            lockfile: lock
+                ? {
+                    kind: lock.kind,
+                    path: lock.relPath,
+                    sha256: lock.sha256
+                }
+                : undefined
         };
 
         const manifestJson = JSON.stringify(manifest, null, 2) + "\n";

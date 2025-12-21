@@ -12,6 +12,11 @@
     "type": "manual",
     "config": {}
   },
+  "permissions": {
+    "connectors": [
+      { "name": "gmail", "scopes": ["send_email"] }
+    ]
+  },
   "runtime": {
     "connections": {
       "gmail": {}

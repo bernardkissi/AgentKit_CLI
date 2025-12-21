@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0.0",
+  "kind": "agent_definition",
+  "id": "missing_plugin_agent",
+  "name": "Missing Plugin Agent",
+  "template_version": "1.0.0",
+  "description": "References a missing plugin type",
+  "trigger": {
+    "type": "manual",
+    "config": {}
+  },
+  "flow": {
+    "entrypoint": "step1"
+  },
+  "steps": [
+    {
+      "id": "step1",
+      "type": "plugin.missing.type",
+      "params": {
+        "foo": "bar"
+      },
+      "flow": {
+        "end": true
+      }
+    }
+  ],
+  "error_handling": {}
+}

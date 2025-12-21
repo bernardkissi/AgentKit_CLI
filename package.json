@@ -19,6 +19,7 @@
   },
   "devDependencies": {
     "@agentkit/plugin-gmail": "workspace:*",
+    "@agentkit/lockfile": "workspace:*",
     "@changesets/cli": "^2.29.8",
     "@typescript-eslint/eslint-plugin": "^8.49.0",
     "@typescript-eslint/parser": "^8.49.0",

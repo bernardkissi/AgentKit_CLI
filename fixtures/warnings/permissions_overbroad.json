@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0.0",
+  "kind": "agent_definition",
+  "id": "perm_overbroad",
+  "name": "Permissions Overbroad",
+  "template_version": "1.0.0",
+  "trigger": { "type": "manual", "config": {} },
+  "flow": { "entrypoint": "step1" },
+  "permissions": {
+    "connectors": [
+      { "name": "gmail", "scopes": ["send_email"] }
+    ]
+  },
+  "steps": [
+    { "id": "step1", "type": "llm.prompt", "params": { "user_prompt": "hello" }, "flow": { "end": true } }
+  ]
+}

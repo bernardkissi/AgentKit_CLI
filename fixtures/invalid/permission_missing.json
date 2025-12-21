@@ -1,18 +1,13 @@
 {
   "schema_version": "1.0.0",
   "kind": "agent_definition",
-  "id": "lint_warn",
-  "name": "Lint Warn",
+  "id": "missing_perm",
+  "name": "Missing Permission",
   "template_version": "1.0.0",
   "trigger": { "type": "manual", "config": {} },
   "flow": { "entrypoint": "a" },
-  "permissions": {
-    "connectors": [
-      { "name": "gmail", "scopes": ["send_email"] }
-    ]
-  },
   "steps": [
-    { "id": "a", "type": "action.gmail.send_email", "params": { "connection": "c1" }, "flow": { "end": true } }
+    { "id": "a", "type": "action.gmail.send_email", "params": { "connection": "c1", "to": "a@b.com", "subject": "hi", "body": "test" }, "flow": { "end": true } }
   ],
   "runtime": { "connections": { "c1": { "integration_type": "gmail", "integration_id": "x" } } }
 }

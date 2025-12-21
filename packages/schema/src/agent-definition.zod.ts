@@ -22,6 +22,28 @@ export const BaseStep = z.object({
   flow: z.record(z.any()).optional()
 }).strict();
 
+export const SecretRef = z.object({
+  $secret: z.string().min(1)
+}).strict();
+
+export const Permissions = z.object({
+  network: z.object({
+    egress: z.object({
+      allow: z.array(z.string()).optional(),
+      deny: z.array(z.string()).optional()
+    }).strict().optional()
+  }).strict().optional(),
+  connectors: z.array(z.object({
+    name: z.string().min(1),
+    scopes: z.array(z.string().min(1)).min(1)
+  }).strict()).optional(),
+  llm: z.object({
+    allowedModels: z.array(z.string().min(1)).optional(),
+    maxTokensPerRun: z.number().int().positive().optional(),
+    maxCostUsdPerRun: z.number().positive().optional()
+  }).strict().optional()
+}).strict().optional();
+
 export const AgentDefinitionSchema = z.object({
   schema_version: SemVer,
   kind: z.literal("agent_definition"),
@@ -33,6 +55,7 @@ export const AgentDefinitionSchema = z.object({
   trigger: Trigger,
   inputs: z.record(z.any()).optional(),
   runtime: z.record(z.any()).optional(),
+  permissions: Permissions,
   flow: AgentFlow,
   steps: z.array(BaseStep).min(1),
   error_handling: z.record(z.any()).optional()

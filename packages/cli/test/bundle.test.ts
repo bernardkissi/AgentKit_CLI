@@ -7,6 +7,7 @@ import { runBundlePack, runBundleVerify } from "../src/commands/bundle";
 
 const root = path.resolve(__dirname, "../../..");
 const agent = path.join(root, "fixtures/valid/example.json");
+const secretInline = path.join(root, "fixtures/invalid/secret_inline.json");
 
 describe("agentkit bundle pack/verify", () => {
   const originalHome = process.env.AGENTKIT_HOME;
@@ -53,5 +54,15 @@ describe("agentkit bundle pack/verify", () => {
     const res = await runBundleVerify(tampered);
     expect(res.exitCode).toBe(1);
     expect(res.output).toContain("E_BUNDLE_HASH_MISMATCH");
+  });
+
+  it("fails pack when inline secrets are present", async () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "agentkit-bundle-"));
+    const out = path.join(tmp, "example.agentkit");
+
+    const res = await runBundlePack(secretInline, out);
+    expect(res.exitCode).toBe(2);
+    expect(res.output).toContain("E_SECRET_INLINE");
+    expect(fs.existsSync(out)).toBe(false);
   });
 });

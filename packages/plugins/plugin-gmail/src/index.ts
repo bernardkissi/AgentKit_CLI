@@ -13,7 +13,10 @@ const sendEmail: StepTypeDef = {
     }).strict(),
     outputsSchema: z.object({
         message_id: z.string()
-    }).strict()
+    }).strict(),
+    requiredCapabilities: [
+        { kind: "connector", name: "gmail", scope: "send_email" }
+    ]
 };
 
 export const agentkitRegistry = {

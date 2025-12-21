@@ -15,6 +15,7 @@ import { renderJson } from '../reporting/json';
 import { StepRegistry as BaseRegistry } from '@agentkit/schema';
 import { loadConfig } from '../config/config';
 import { mergeRegistries, loadTrustedPluginRegistries } from '@agentkit/registry';
+import { detectLockfile } from "@agentkit/lockfile";
 
 
 
@@ -42,15 +43,19 @@ export async function runValidate(
 		// -----------------------------
 		const projectRoot = process.cwd();
 		const cfg = loadConfig(projectRoot);
+		const lock = detectLockfile(projectRoot);
 
-		const requirePins = effectivePolicy === "ci" && (cfg.trust?.requirePinnedVersionsInCi ?? true);
+		const pinsRequiredFlag = cfg.trust?.requirePinnedVersionsInCi ?? true;
+		const requirePins = (effectivePolicy === "ci" || effectivePolicy === "runtime") && pinsRequiredFlag;
 
 		const { registries: pluginRegistries } = await loadTrustedPluginRegistries({
 			plugins: cfg.plugins ?? [],
 			projectRoot,
 			trustAllow: cfg.trust?.allow,
 			trustDeny: cfg.trust?.deny,
-			requirePins
+			requirePins,
+			lockfile: lock ?? undefined,
+			policyName: effectivePolicy
 		});
 
 		const registry = mergeRegistries(BaseRegistry as any, pluginRegistries);
