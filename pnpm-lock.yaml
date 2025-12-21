@@ -29,6 +29,9 @@ importers:
 
   packages/cli:
     dependencies:
+      '@agentkit/lockfile':
+        specifier: workspace:*
+        version: link:../lockfile
       '@agentkit/registry':
         specifier: workspace:*
         version: link:../registry
@@ -107,6 +110,9 @@ importers:
 
   packages/registry:
     dependencies:
+      '@agentkit/lockfile':
+        specifier: workspace:*
+        version: link:../lockfile
       '@agentkit/schema':
         specifier: workspace:*
         version: link:../schema
