@@ -19,7 +19,7 @@ jobs:
       - run: pnpm -r build
       - run: pnpm test
       - run: pnpm deps:check
-      - run: pnpm --filter @agentkit/cli dev -- gen schema --out dist
+      - run: pnpm --filter @agentkit/cli dev -- generate schema --out dist
       - name: Validate strict (example.json)
         run: node packages/cli/dist/main.js validate "$GITHUB_WORKSPACE/fixtures/valid/example.json" --policy strict --format json
       - name: Bundle pack (example.json)
