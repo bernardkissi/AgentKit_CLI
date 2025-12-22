@@ -1,7 +1,7 @@
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import type { StepRegistry, AgentKitPluginModule } from "./types";
-import type { PluginProvenance } from "./provenance";
+import type { PluginProvenance, PluginSource } from "./provenance";
 import type { LockfileInfo } from "@agentkit/lockfile";
 import { resolvePackageVersion } from "@agentkit/lockfile";
 
@@ -132,4 +132,40 @@ export async function loadTrustedPluginRegistries(args: {
     }
 
     return { registries, provenance };
+}
+
+export interface LoadedRegistry {
+    id: string;
+    name?: string;
+    version?: string;
+    source: PluginSource | "builtin";
+    path?: string;
+    registry: StepRegistry;
+}
+
+export async function loadRegistriesBySource(args: {
+    plugins: PluginSpec[];
+    projectRoot: string;
+    trustAllow?: string[];
+    trustDeny?: string[];
+    requirePins?: boolean;
+    lockfile?: LockfileInfo;
+    policyName?: string;
+}): Promise<LoadedRegistry[]> {
+    const { registries, provenance } = await loadTrustedPluginRegistries(args);
+    const loaded: LoadedRegistry[] = [];
+
+    for (let i = 0; i < registries.length; i++) {
+        const prov = provenance[i];
+        loaded.push({
+            id: prov.name ?? prov.path ?? `plugin-${i + 1}`,
+            name: prov.name,
+            version: prov.version,
+            source: prov.source,
+            path: prov.path,
+            registry: registries[i],
+        });
+    }
+
+    return loaded;
 }

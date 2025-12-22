@@ -1,14 +1,15 @@
 import { zodToJsonSchema } from "zod-to-json-schema";
 import type { StepRegistry } from "@agentkit/registry";
 
-function defKeyForStep(stepType: string, kind: "Params" | "Outputs") {
+export function defKeyForStep(stepType: string, kind: "Params" | "Outputs") {
   const norm = stepType.replace(/\./g, "_");
   return `Step${kind}__${norm}`;
 }
 
-export function buildRegistrySchemaFragments(registry: StepRegistry) {
+export function buildStepSchemas(registry: StepRegistry) {
   const defs: Record<string, any> = {};
   const stepVariants: any[] = [];
+  const xIndexSteps: Array<{ type: string; paramsDef: string; outputsDef: string }> = [];
 
   const stepTypes = Object.keys(registry).sort();
 
@@ -47,7 +48,19 @@ export function buildRegistrySchemaFragments(registry: StepRegistry) {
       required: ["id", "type", "params"],
       additionalProperties: false,
     });
+
+    xIndexSteps.push({
+      type: stepType,
+      paramsDef: paramsKey,
+      outputsDef: outputsKey,
+    });
   }
+
+  return { defs, stepVariants, xIndexSteps };
+}
+
+export function buildRegistrySchemaFragments(registry: StepRegistry) {
+  const { defs, stepVariants } = buildStepSchemas(registry);
 
   return {
     defs,

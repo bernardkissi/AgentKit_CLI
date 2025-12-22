@@ -46,10 +46,20 @@ program
   .command("schema")
   .option("--out <dir>", "Output directory", "dist")
   .option("--project <dir>", "Project directory", process.cwd())
+  .option("--core-only", "Generate only the core schema", false)
+  .option("--plugins-only", "Generate only plugin schemas and index (core emitted if missing)", false)
+  .option("--include-builtins", "Include built-in step registry in the plugin index", true)
+  .option("--emit-builtins-plugin", "Emit built-in steps as a plugin schema file", false)
+  .option("--generated-at", "Include generatedAt timestamp in schema.index.json", false)
   .action(async (options: any) => {
     const { exitCode, output } = await runGenSchema({
       outDir: options.out,
       projectDir: options.project,
+      coreOnly: options.coreOnly,
+      pluginsOnly: options.pluginsOnly,
+      includeBuiltins: options.includeBuiltins,
+      emitBuiltinsPlugin: options.emitBuiltinsPlugin,
+      noGeneratedAt: !options.generatedAt,
     });
     if (output) process.stdout.write(output);
     process.exit(exitCode);
